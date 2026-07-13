@@ -1,0 +1,24 @@
+{
+  "name": "@repo/api",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@repo/env": "workspace:*",
+    "@repo/logger": "workspace:*",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pino-http": "^11.0.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3"
+  }
+}
