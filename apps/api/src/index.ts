@@ -34,13 +34,15 @@ app.use(
   }),
 );
 
+app.use(express.json());
+
 // Routes
 import router from './routes/index.js'
 import { errorHandler } from "./middleware/errors.js";
 import { auth } from "./libs/auth.js";
 import { toNodeHandler } from "better-auth/node";
 
-app.use('/api/v1/',router)
+app.use("/api/v1", router);
 
 
 // Better Auth 
