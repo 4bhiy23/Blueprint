@@ -8,6 +8,11 @@ const apiEnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+
+  FRONTEND_URL: z.string().url(),
+
+  BETTER_AUTH_SECRET: z.string(),
+  BETTER_AUTH_URL: z.string()
 });
 
 export const apiEnv = apiEnvSchema.parse(process.env);
