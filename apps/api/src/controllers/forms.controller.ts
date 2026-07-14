@@ -161,3 +161,20 @@ export async function duplicateForm(req: Request, res: Response) {
 
   return res.status(201).json({ form });
 }
+
+export async function addQuestionToForm(req: Request, res: Response) {
+  const userId = getUserId(req);
+
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const formId = getFormId(req);
+
+  if (!formId) {
+    return res.status(400).json({ error: "Invalid form id" });
+  }
+
+
+  
+}

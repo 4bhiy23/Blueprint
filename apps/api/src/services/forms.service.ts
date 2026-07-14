@@ -1,6 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { sql } from "drizzle-orm";
-import { db, forms, questions, questionOptions } from "@repo/db";
+import { and, db, eq, forms, questions, questionOptions } from "@repo/db";
 
 function createPublicId() {
   return `frm_${randomBytes(6).toString("base64url")}`;
@@ -100,7 +99,7 @@ export async function updateFormForUser(input: {
         ? { description: input.description.trim() || null }
         : {}),
     })
-    .where(sql`${forms.id} = ${existingForm.id}` as any)
+    .where(eq(forms.id, existingForm.id))
     .returning();
 
   return updatedForm;
@@ -119,7 +118,7 @@ export async function deleteFormForUser(input: {
     return false;
   }
 
-  await db.delete(forms).where(sql`${forms.id} = ${existingForm.id}` as any);
+  await db.delete(forms).where(eq(forms.id, existingForm.id));
 
   return true;
 }

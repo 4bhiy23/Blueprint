@@ -9,7 +9,6 @@ export const formStatusEnum = pgEnum("blueprint_status", [
 
 export const questionTypeEnum = pgEnum("question_type", [
   "text",
-  "textarea",
   "number",
   "email",
   "select",
