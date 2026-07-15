@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import {
+  checkFormForUser,
   createFormForUser,
   deleteFormForUser,
   duplicateFormForUser,
@@ -7,12 +8,14 @@ import {
   listFormsForUser,
   updateFormForUser,
 } from "../services/forms.service.js";
+import { QuestionSchema } from "../../../../packages/validators/src/index.js";
+import { addQuestionToDbForUser } from "../services/questions.service.js";
 
 function getUserId(req: Request) {
   return req.user?.id;
 }
 
-function getFormId(req: Request) {
+export function getFormId(req: Request) {
   const { id } = req.params;
   return Array.isArray(id) ? id[0] : id;
 }
@@ -163,18 +166,40 @@ export async function duplicateForm(req: Request, res: Response) {
 }
 
 export async function addQuestionToForm(req: Request, res: Response) {
-  const userId = getUserId(req);
+  try {
+    const userId = getUserId(req);
 
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const formId = getFormId(req);
+
+    if (!formId) {
+      return res.status(400).json({ error: "Invalid form id" });
+    }
+
+    const formExists = await checkFormForUser(userId, formId);
+    if (!formExists) {
+      return res.status(404).json({ error: "Form Not Found" });
+    }
+
+    const question = req.body;
+    const isValid = QuestionSchema.safeParse(question).success;
+    if (!isValid) {
+      return res.status(400).json({ error: "Question not valid" });
+    }
+
+    // add question ot db
+    const createdQuestion = await addQuestionToDbForUser(question, formId);
+    return res.status(200).json({ success: false, data: createdQuestion });
+
+    
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to create question.",
+    });
   }
-
-  const formId = getFormId(req);
-
-  if (!formId) {
-    return res.status(400).json({ error: "Invalid form id" });
-  }
-
-
-  
 }

@@ -19,6 +19,7 @@ export const questions = pgTable("questions", {
 
     .references(() => forms.id, {
       onDelete: "cascade",
+      
     }),
 
   title: text("title").notNull(),

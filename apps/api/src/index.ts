@@ -42,14 +42,20 @@ import { errorHandler } from "./middleware/errors.js";
 import { auth } from "./libs/auth.js";
 import { toNodeHandler } from "better-auth/node";
 
-app.use("/api/v1", router);
-
-
 // Better Auth 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
+app.use("/api/v1", router);
+
+
 // Global error handler
-app.use(errorHandler)
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+  });
+});
+
+app.use(errorHandler);
 
 
 app.listen(apiEnv.PORT, () => {

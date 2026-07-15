@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, db, eq, forms, questions, questionOptions } from "@repo/db";
+import { sql, and, db, eq, forms, questions, questionOptions } from "@repo/db";
 
 function createPublicId() {
   return `frm_${randomBytes(6).toString("base64url")}`;
@@ -7,7 +7,7 @@ function createPublicId() {
 
 function serializeFormQuestion(
   question: typeof questions.$inferSelect,
-  options: typeof questionOptions.$inferSelect[],
+  options: (typeof questionOptions.$inferSelect)[],
 ) {
   return {
     ...question,
@@ -43,10 +43,16 @@ export async function listFormsForUser(userId: string) {
   });
 }
 
-export async function getFormForUser(input: { userId: string; formId: string }) {
+export async function getFormForUser(input: {
+  userId: string;
+  formId: string;
+}) {
   const form = await db.query.forms.findFirst({
     where: (formsTable, { and, eq }) =>
-      and(eq(formsTable.id, input.formId), eq(formsTable.ownerId, input.userId)),
+      and(
+        eq(formsTable.id, input.formId),
+        eq(formsTable.ownerId, input.userId),
+      ),
   });
 
   if (!form) {
@@ -84,7 +90,10 @@ export async function updateFormForUser(input: {
 }) {
   const existingForm = await db.query.forms.findFirst({
     where: (formsTable, { and, eq }) =>
-      and(eq(formsTable.id, input.formId), eq(formsTable.ownerId, input.userId)),
+      and(
+        eq(formsTable.id, input.formId),
+        eq(formsTable.ownerId, input.userId),
+      ),
   });
 
   if (!existingForm) {
@@ -111,7 +120,10 @@ export async function deleteFormForUser(input: {
 }) {
   const existingForm = await db.query.forms.findFirst({
     where: (formsTable, { and, eq }) =>
-      and(eq(formsTable.id, input.formId), eq(formsTable.ownerId, input.userId)),
+      and(
+        eq(formsTable.id, input.formId),
+        eq(formsTable.ownerId, input.userId),
+      ),
   });
 
   if (!existingForm) {
@@ -130,7 +142,10 @@ export async function duplicateFormForUser(input: {
   return db.transaction(async (tx) => {
     const sourceForm = await tx.query.forms.findFirst({
       where: (formsTable, { and, eq }) =>
-        and(eq(formsTable.id, input.formId), eq(formsTable.ownerId, input.userId)),
+        and(
+          eq(formsTable.id, input.formId),
+          eq(formsTable.ownerId, input.userId),
+        ),
     });
 
     if (!sourceForm) {
@@ -149,7 +164,8 @@ export async function duplicateFormForUser(input: {
       .returning();
 
     const sourceQuestions = await tx.query.questions.findMany({
-      where: (questionsTable, { eq }) => eq(questionsTable.formId, sourceForm.id),
+      where: (questionsTable, { eq }) =>
+        eq(questionsTable.formId, sourceForm.id),
       orderBy: (questionsTable, { asc }) => [asc(questionsTable.orderIndex)],
     });
 
@@ -196,4 +212,20 @@ export async function duplicateFormForUser(input: {
 
     return newForm;
   });
+}
+
+// Questions
+export async function checkFormForUser(userId: string, formId: string) {
+  const [result] = await db
+    .select({ exists: sql<boolean>`true` })
+    .from(forms)
+    .where(
+      and(
+        eq(forms.id, formId),
+        eq(forms.ownerId, userId),
+      ),
+    )
+    .limit(1);
+
+  return !!result;
 }

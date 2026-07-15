@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/requireAuth.js";
 import {
+  addQuestionToForm,
   createForm,
   deleteForm,
   duplicateForm,
@@ -8,6 +9,7 @@ import {
   listForms,
   updateForm,
 } from "../controllers/forms.controller.js";
+import { reorderQuestions } from "../controllers/questions.controller.js";
 
 const router = Router();
 
@@ -21,6 +23,8 @@ router.delete("/:id", deleteForm);
 router.post("/:id/duplicate", duplicateForm);
 
 // Questions
+router.post("/:id/question", addQuestionToForm);
+router.patch("/forms/:formId/questions/reorder", reorderQuestions);
 
 
 export default router;
