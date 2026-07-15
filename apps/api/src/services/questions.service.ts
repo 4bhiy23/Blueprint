@@ -8,8 +8,17 @@ import {
   gt,
   sql
 } from "@repo/db";
+import type {
+  CreateOptionInput,
+  QuestionInput,
+  ReorderQuestionInput,
+  UpdateQuestionInput,
+} from "@repo/validators";
 
-export const addQuestionToDbForUser = async (question, formId: string) => {
+export const addQuestionToDbForUser = async (
+  question: QuestionInput,
+  formId: string,
+) => {
   return await db.transaction(async (tx) => {
     const [createdQuestion] = await tx
       .insert(questions)
@@ -21,19 +30,25 @@ export const addQuestionToDbForUser = async (question, formId: string) => {
         required: question.required,
         orderIndex: question.orderIndex,
       })
-      .returning({ id: questions.id });
+      .returning();
 
-    if (question.options.length) {
-      await tx.insert(questionOptions).values(
+    const createdOptions: typeof questionOptions.$inferSelect[] = [];
+    if (question.options?.length) {
+      const insertedOptions = await tx.insert(questionOptions).values(
         question.options.map((option) => ({
           questionId: createdQuestion.id,
           label: option.label,
           orderIndex: option.orderIndex,
         })),
-      );
+      ).returning();
+
+      createdOptions.push(...insertedOptions);
     }
 
-    return createdQuestion;
+    return {
+      ...createdQuestion,
+      options: createdOptions,
+    };
   });
 };
 
@@ -69,8 +84,8 @@ export const checkOwnershipOfForm = async (
 };
 
 export const updateQuestionForUser = async (
-  updatedQuestion,
-  originalQuestion,
+  updatedQuestion: UpdateQuestionInput,
+  originalQuestion: typeof questions.$inferSelect,
 ) => {
   const changes: Record<string, unknown> = {};
 
@@ -84,10 +99,6 @@ export const updateQuestionForUser = async (
 
   if (updatedQuestion.required !== originalQuestion.required) {
     changes.required = updatedQuestion.required;
-  }
-
-  if (updatedQuestion.orderIndex !== originalQuestion.orderIndex) {
-    changes.orderIndex = updatedQuestion.orderIndex;
   }
 
   if (Object.keys(changes).length === 0) {
@@ -129,7 +140,7 @@ export const deleteQuestionForUser = async (
 
 export const addOptionToQuestionForUser = async (
   questionId: string,
-  newOption,
+  newOption: CreateOptionInput,
 ) => {
   const [option] = await db
     .insert(questionOptions)
@@ -145,12 +156,7 @@ export const addOptionToQuestionForUser = async (
 
 export const reorderQuestionsForUser = async (
   formId: string,
-
-  reorderedQuestions: {
-    id: string;
-
-    orderIndex: number;
-  }[],
+  reorderedQuestions: ReorderQuestionInput[],
 ) => {
   return await db.transaction(async (tx) => {
     for (const question of reorderedQuestions) {

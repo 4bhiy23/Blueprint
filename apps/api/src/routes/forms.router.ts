@@ -23,8 +23,8 @@ router.delete("/:id", deleteForm);
 router.post("/:id/duplicate", duplicateForm);
 
 // Questions
-router.post("/:id/question", addQuestionToForm);
-router.patch("/forms/:formId/questions/reorder", reorderQuestions);
+router.post("/:id/questions", addQuestionToForm);
+router.patch("/:id/questions/reorder", reorderQuestions);
 
 
 export default router;

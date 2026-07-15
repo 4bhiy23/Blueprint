@@ -10,6 +10,11 @@ import {
   updateQuestionForUser,
 } from "../services/questions.service.js";
 import { getFormId } from "./forms.controller.js";
+import {
+  CreateOptionSchema,
+  ReorderQuestionsSchema,
+  UpdateQuestionSchema,
+} from "@repo/validators";
 
 export function getUserId(req: Request) {
   return req.user?.id;
@@ -61,7 +66,16 @@ export const updateQuestion = async (req: Request, res: Response) => {
     });
   }
 
-  const updatedQuestion = await updateQuestionForUser(req.body, question);
+  const parsed = UpdateQuestionSchema.safeParse(req.body ?? {});
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Invalid question payload",
+      issues: parsed.error.flatten(),
+    });
+  }
+
+  const updatedQuestion = await updateQuestionForUser(parsed.data, question);
 
   return res.status(200).json({
     message: "Question updated successfully",
@@ -160,7 +174,16 @@ export const addOption = async (req: Request, res: Response) => {
     });
   }
 
-  const option = await addOptionToQuestionForUser(question.id, req.body);
+  const parsed = CreateOptionSchema.safeParse(req.body ?? {});
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Invalid option payload",
+      issues: parsed.error.flatten(),
+    });
+  }
+
+  const option = await addOptionToQuestionForUser(question.id, parsed.data);
 
   return res.status(201).json({
     message: "Option added successfully",
@@ -217,10 +240,19 @@ export const reorderQuestions = async (
     });
   }
 
+  const parsed = ReorderQuestionsSchema.safeParse({ questions });
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Invalid questions payload",
+      issues: parsed.error.flatten(),
+    });
+  }
+
   await reorderQuestionsForUser(
     formId,
 
-    questions,
+    parsed.data.questions,
   );
 
   return res.status(200).json({

@@ -11,12 +11,15 @@
     "@repo/db": "workspace:*",
     "@repo/env": "workspace:*",
     "@repo/logger": "workspace:*",
+    "@repo/validators": "workspace:*",
     "better-auth": "^1.6.23",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
-    "pino-http": "^11.0.0"
+    "pino-http": "^11.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

@@ -1,9 +1,13 @@
 import { and, db, eq, gt, questionOptions, sql } from "@repo/db";
+import type {
+  CreateOptionInput,
+  UpdateOptionInput,
+} from "@repo/validators";
 
 export const updateOptionForUser = async (
   optionId: string,
-  updatedOption,
-  originalOption,
+  updatedOption: UpdateOptionInput,
+  originalOption: typeof questionOptions.$inferSelect,
 ) => {
   const changes: Record<string, unknown> = {};
 

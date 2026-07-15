@@ -4,7 +4,13 @@ import express from "express";
 import pinoHttp from "pino-http";
 import { logger } from "@repo/logger";
 import { apiEnv } from "@repo/env";
-import cors from 'cors'
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
+import router from "./routes/index.js";
+import { errorHandler } from "./middleware/errors.js";
+import { auth } from "./libs/auth.js";
+import { toNodeHandler } from "better-auth/node";
 
 const app = express();
 
@@ -36,13 +42,13 @@ app.use(
 
 app.use(express.json());
 
-// Routes
-import router from './routes/index.js'
-import { errorHandler } from "./middleware/errors.js";
-import { auth } from "./libs/auth.js";
-import { toNodeHandler } from "better-auth/node";
+app.get("/api-docs.json", (_req, res) => {
+  res.json(swaggerSpec);
+});
 
-// Better Auth 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Better Auth
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use("/api/v1", router);

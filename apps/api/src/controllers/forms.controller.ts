@@ -8,7 +8,11 @@ import {
   listFormsForUser,
   updateFormForUser,
 } from "../services/forms.service.js";
-import { QuestionSchema } from "../../../../packages/validators/src/index.js";
+import {
+  CreateFormSchema,
+  CreateQuestionSchema,
+  UpdateFormSchema,
+} from "@repo/validators";
 import { addQuestionToDbForUser } from "../services/questions.service.js";
 
 function getUserId(req: Request) {
@@ -20,10 +24,6 @@ export function getFormId(req: Request) {
   return Array.isArray(id) ? id[0] : id;
 }
 
-function isOptionalString(value: unknown): value is string | undefined {
-  return value === undefined || typeof value === "string";
-}
-
 export async function createForm(req: Request, res: Response) {
   const userId = getUserId(req);
 
@@ -31,16 +31,19 @@ export async function createForm(req: Request, res: Response) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { title, description } = req.body ?? {};
+  const parsed = CreateFormSchema.safeParse(req.body ?? {});
 
-  if (!isOptionalString(title) || !isOptionalString(description)) {
-    return res.status(400).json({ error: "Invalid request body" });
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid request body",
+      issues: parsed.error.flatten(),
+    });
   }
 
   const form = await createFormForUser({
     userId,
-    title,
-    description,
+    title: parsed.data.title,
+    description: parsed.data.description,
   });
 
   return res.status(201).json({ form });
@@ -91,21 +94,25 @@ export async function updateForm(req: Request, res: Response) {
   }
 
   const formId = getFormId(req);
-  const { title, description } = req.body ?? {};
 
   if (!formId) {
     return res.status(400).json({ error: "Invalid form id" });
   }
 
-  if (!isOptionalString(title) || !isOptionalString(description)) {
-    return res.status(400).json({ error: "Invalid request body" });
+  const parsed = UpdateFormSchema.safeParse(req.body ?? {});
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Invalid request body",
+      issues: parsed.error.flatten(),
+    });
   }
 
   const form = await updateFormForUser({
     userId,
     formId,
-    title,
-    description,
+    title: parsed.data.title,
+    description: parsed.data.description,
   });
 
   if (!form) {
@@ -184,17 +191,16 @@ export async function addQuestionToForm(req: Request, res: Response) {
       return res.status(404).json({ error: "Form Not Found" });
     }
 
-    const question = req.body;
-    const isValid = QuestionSchema.safeParse(question).success;
-    if (!isValid) {
-      return res.status(400).json({ error: "Question not valid" });
+    const parsed = CreateQuestionSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Question not valid",
+        issues: parsed.error.flatten(),
+      });
     }
 
-    // add question ot db
-    const createdQuestion = await addQuestionToDbForUser(question, formId);
-    return res.status(200).json({ success: false, data: createdQuestion });
-
-    
+    const createdQuestion = await addQuestionToDbForUser(parsed.data, formId);
+    return res.status(201).json({ question: createdQuestion });
   } catch (error) {
     console.error(error);
     return res.status(500).json({

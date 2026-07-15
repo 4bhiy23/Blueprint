@@ -6,6 +6,7 @@ import {
   getQuestionForUser,
 } from "../services/questions.service.js";
 import { deleteOptionForUser, updateOptionForUser } from "../services/options.service.js";
+import { UpdateOptionSchema } from "@repo/validators";
 
 function getUserId(req: Request) {
   return req.user?.id;
@@ -65,7 +66,16 @@ export const updateOption = async (req: Request, res: Response) => {
     });
   }
 
-  const updatedOption = await updateOptionForUser(optionId, req.body, option);
+  const parsed = UpdateOptionSchema.safeParse(req.body ?? {});
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Invalid option payload",
+      issues: parsed.error.flatten(),
+    });
+  }
+
+  const updatedOption = await updateOptionForUser(optionId, parsed.data, option);
 
   return res.status(200).json({
     message: "Option updated successfully",
