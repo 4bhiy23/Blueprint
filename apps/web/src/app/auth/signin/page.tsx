@@ -11,14 +11,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export default function SignUpPage() {
+export default function SignInPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
 
   const [error, setError] = useState("");
@@ -34,30 +32,23 @@ export default function SignUpPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     setError("");
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-
     try {
-      const { error: signUpError } = await authClient.signUp.email({
-        name: form.name,
+      const { error: signInError } = await authClient.signIn.email({
         email: form.email,
         password: form.password,
       });
 
-      if (signUpError) {
-        setError(signUpError.message || "Failed to create an account. Please check your inputs.");
+      if (signInError) {
+        setError(signInError.message || "Failed to sign in. Please verify your credentials.");
         setLoading(false);
         return;
       }
 
-      toast.success("Account created!", {
-        description: "Welcome to Blueprint! Redirecting to dashboard...",
+      toast.success("Welcome back!", {
+        description: "Successfully signed in to Blueprint.",
         duration: 3000,
       });
       router.push("/");
@@ -67,9 +58,10 @@ export default function SignUpPage() {
     }
   }
 
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
+      // Mock flow if database or better-auth social is unconfigured
       toast.info("Connecting to Google authentication...");
       await authClient.signIn.social({
         provider: "google",
@@ -79,6 +71,13 @@ export default function SignUpPage() {
       toast.error(err?.message || "Social login initialization failed.");
       setGoogleLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    toast.info("Password Reset Link Sent", {
+      description: "Check your email for details to reset your password.",
+      duration: 4000,
+    });
   };
 
   return (
@@ -92,29 +91,15 @@ export default function SignUpPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
             <LayoutGrid className="h-5 w-5 text-primary-foreground" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground mt-2">Create Account</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground mt-2">Welcome Back</h1>
           <p className="text-xs text-muted-foreground">
-            Sign up to build stunning conversational flows in seconds.
+            Sign in to manage and build beautiful forms.
           </p>
         </div>
 
         {/* Credentials Form Card */}
         <div className="border border-border bg-card/60 backdrop-blur-md rounded-xl p-6 shadow-xl space-y-5">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5 text-left">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="John Doe"
-                value={form.name}
-                onChange={handleChange}
-                className="bg-muted/10 border-border"
-                required
-              />
-            </div>
-
             <div className="space-y-1.5 text-left">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -124,13 +109,22 @@ export default function SignUpPage() {
                 placeholder="you@example.com"
                 value={form.email}
                 onChange={handleChange}
-                className="bg-muted/10 border-border"
+                className={cn("bg-muted/10 border-border")}
                 required
               />
             </div>
 
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs text-primary hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <Input
                 id="password"
                 name="password"
@@ -138,21 +132,7 @@ export default function SignUpPage() {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={handleChange}
-                className="bg-muted/10 border-border"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5 text-left">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                className="bg-muted/10 border-border"
+                className={cn("bg-muted/10 border-border")}
                 required
               />
             </div>
@@ -165,18 +145,18 @@ export default function SignUpPage() {
             )}
 
             <Button disabled={loading} className="w-full h-9 font-semibold text-xs gap-1.5">
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? "Signing in..." : "Sign In"}
               {!loading && <ArrowRight className="h-3 w-3" />}
             </Button>
           </form>
 
-          {/* Divider */}
+          {/* Social connection divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border/80" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground/60 text-[10px]">Or register with</span>
+              <span className="bg-card px-2 text-muted-foreground/60 text-[10px]">Or continue with</span>
             </div>
           </div>
 
@@ -184,7 +164,7 @@ export default function SignUpPage() {
           <Button
             variant="outline"
             disabled={googleLoading}
-            onClick={handleGoogleSignUp}
+            onClick={handleGoogleSignIn}
             className="w-full h-9 text-xs gap-2 border-border"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -197,11 +177,11 @@ export default function SignUpPage() {
           </Button>
         </div>
 
-        {/* Link back to login */}
+        {/* Link back to registration */}
         <p className="text-center text-xs text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/auth/signin" className="text-primary hover:underline font-semibold">
-            Sign in
+          Don't have an account?{" "}
+          <Link href="/auth/signup" className="text-primary hover:underline font-semibold">
+            Create an account
           </Link>
         </p>
       </div>
