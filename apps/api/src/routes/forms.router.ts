@@ -1,15 +1,15 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/requireAuth.js";
 import {
-  addQuestionToForm,
   createForm,
   deleteForm,
   duplicateForm,
+  getBuilder,
   getForm,
   listForms,
+  saveBuilder,
   updateForm,
 } from "../controllers/forms.controller.js";
-import { reorderQuestions } from "../controllers/questions.controller.js";
 
 const router = Router();
 
@@ -21,10 +21,7 @@ router.get("/:id", getForm);
 router.patch("/:id", updateForm);
 router.delete("/:id", deleteForm);
 router.post("/:id/duplicate", duplicateForm);
-
-// Questions
-router.post("/:id/questions", addQuestionToForm);
-router.patch("/:id/questions/reorder", reorderQuestions);
-
+router.get("/:id/builder", getBuilder);
+router.put("/:id/builder", saveBuilder);
 
 export default router;

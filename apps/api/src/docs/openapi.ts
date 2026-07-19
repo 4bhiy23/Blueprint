@@ -33,6 +33,10 @@
  *           $ref: '#/components/schemas/FormStatus'
  *         publicId:
  *           type: string
+ *         firstQuestionId:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -168,43 +172,6 @@
  *       additionalProperties: false
  *     UpdateFormRequest:
  *       $ref: '#/components/schemas/CreateFormRequest'
- *     CreateQuestionRequest:
- *       type: object
- *       properties:
- *         title:
- *           type: string
- *         description:
- *           type: string
- *         type:
- *           $ref: '#/components/schemas/QuestionType'
- *         required:
- *           type: boolean
- *         orderIndex:
- *           type: integer
- *           minimum: 0
- *         options:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               label:
- *                 type: string
- *               orderIndex:
- *                 type: integer
- *                 minimum: 0
- *             required: [label, orderIndex]
- *       required: [title, type, orderIndex]
- *       additionalProperties: false
- *     UpdateQuestionRequest:
- *       type: object
- *       properties:
- *         title:
- *           type: string
- *         description:
- *           type: string
- *         required:
- *           type: boolean
- *       additionalProperties: false
  *     CreateOptionRequest:
  *       type: object
  *       properties:
@@ -340,10 +307,10 @@
  *         description: Duplicated
  *       '404':
  *         description: Form not found
- * /api/v1/forms/{id}/questions:
- *   post:
- *     tags: [Questions]
- *     summary: Create a question inside a form
+ * /api/v1/forms/{id}/builder:
+ *   get:
+ *     tags: [Forms]
+ *     summary: Get a form builder graph
  *     parameters:
  *       - in: path
  *         name: id
@@ -351,23 +318,14 @@
  *         schema:
  *           type: string
  *           format: uuid
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateQuestionRequest'
  *     responses:
- *       '201':
- *         description: Created question
- *       '400':
- *         description: Invalid request body
+ *       '200':
+ *         description: Builder graph
  *       '404':
  *         description: Form not found
- * /api/v1/forms/{id}/questions/reorder:
- *   patch:
- *     tags: [Questions]
- *     summary: Reorder questions inside a form
+ *   put:
+ *     tags: [Forms]
+ *     summary: Save a form builder graph
  *     parameters:
  *       - in: path
  *         name: id
@@ -382,66 +340,58 @@
  *           schema:
  *             type: object
  *             properties:
- *               questions:
+ *               nodes:
  *                 type: array
  *                 items:
  *                   type: object
+ *                   required: [id, type, position, data]
  *                   properties:
  *                     id:
  *                       type: string
  *                       format: uuid
- *                     orderIndex:
- *                       type: integer
- *                       minimum: 0
- *                   required: [id, orderIndex]
- *             required: [questions]
+ *                     type:
+ *                       $ref: '#/components/schemas/QuestionType'
+ *                     position:
+ *                       type: object
+ *                       required: [x, y]
+ *                       properties:
+ *                         x:
+ *                           type: number
+ *                         y:
+ *                           type: number
+ *                     data:
+ *                       type: object
+ *                       required: [title, description, required]
+ *                       properties:
+ *                         title:
+ *                           type: string
+ *                         description:
+ *                           type: string
+ *                         required:
+ *                           type: boolean
+ *               edges:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     source:
+ *                       type: string
+ *                       format: uuid
+ *                     target:
+ *                       type: string
+ *                       format: uuid
+ *                   required: [source, target]
+ *               viewport:
+ *                 type: object
+ *             required: [nodes, edges, viewport]
  *             additionalProperties: false
  *     responses:
  *       '200':
- *         description: Questions reordered successfully
+ *         description: Builder graph saved
  *       '400':
- *         description: Invalid questions payload
+ *         description: Invalid builder payload or graph
  *       '404':
  *         description: Form not found
- * /api/v1/questions/{questionId}:
- *   patch:
- *     tags: [Questions]
- *     summary: Update a question
- *     parameters:
- *       - in: path
- *         name: questionId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateQuestionRequest'
- *     responses:
- *       '200':
- *         description: Updated question
- *       '400':
- *         description: Invalid request body
- *       '404':
- *         description: Question not found
- *   delete:
- *     tags: [Questions]
- *     summary: Delete a question
- *     parameters:
- *       - in: path
- *         name: questionId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       '204':
- *         description: Deleted
- *       '404':
- *         description: Question not found
  * /api/v1/questions/{questionId}/options:
  *   post:
  *     tags: [Questions]

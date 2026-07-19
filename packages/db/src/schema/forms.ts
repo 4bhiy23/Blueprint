@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { formStatusEnum } from "./enums.js";
 import { user } from "./auth.js";
@@ -38,4 +39,8 @@ export const forms = pgTable("forms", {
     .defaultNow()
 
     .notNull(),
+
+  builderViewport: jsonb("builder_viewport").$type<Record<string, unknown> | null>(),
+
+  firstQuestionId: uuid("first_question_id"),
 });

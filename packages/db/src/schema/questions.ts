@@ -4,6 +4,8 @@ import {
   text,
   integer,
   boolean,
+  doublePrecision,
+  index,
 } from "drizzle-orm/pg-core";
 import { questionTypeEnum } from "./enums.js";
 import { forms } from "./forms.js";
@@ -34,4 +36,10 @@ export const questions = pgTable("questions", {
     .default(false),
 
   orderIndex: integer("order_index").notNull(),
-});
+
+  positionX: doublePrecision("position_x").notNull().default(0),
+
+  positionY: doublePrecision("position_y").notNull().default(0),
+}, (table) => [
+  index("questions_form_id_idx").on(table.formId),
+]);

@@ -10,5 +10,5 @@ export const db = drizzle(sql,{
     schema
 });
 
-export { and, eq, sql, gt } from "drizzle-orm";
+export { and, eq, sql, gt, inArray, notInArray } from "drizzle-orm";
 export * from "./schema/index.js";

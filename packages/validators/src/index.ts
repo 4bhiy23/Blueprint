@@ -61,59 +61,44 @@ export const UpdateQuestionOptionSchema = z
   })
   .strict();
 
-export const QuestionSchema = z
+export const BuilderPositionSchema = z
+  .object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+  })
+  .strict();
+
+export const BuilderNodeSchema = z
   .object({
     id: z.string().uuid(),
-    formId: z.string().uuid(),
-    title: trimmedText(255),
-    description: z.string().trim().max(2000).nullable(),
     type: QuestionTypeSchema,
-    required: z.boolean(),
-    orderIndex: z.number().int().nonnegative(),
+    position: BuilderPositionSchema,
+    data: z
+      .object({
+        title: trimmedText(255),
+        description: z.string().trim().max(2000).default(""),
+        required: z.boolean().default(false),
+      })
+      .strict(),
   })
   .strict();
 
-export const CreateQuestionSchema = z
+export const BuilderEdgeSchema = z
   .object({
-    title: trimmedText(255),
-    description: z.string().trim().max(2000).optional(),
-    type: QuestionTypeSchema,
-    required: z.boolean().default(false),
-    orderIndex: z.number().int().nonnegative(),
-    options: z.array(CreateQuestionOptionSchema).optional(),
-  })
-  .strict()
-  .superRefine((question, ctx) => {
-    if (
-      QUESTION_OPTION_TYPES.includes(question.type as (typeof QUESTION_OPTION_TYPES)[number]) &&
-      (!question.options || question.options.length === 0)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["options"],
-        message: "This question type requires at least one option.",
-      });
-    }
-  });
-
-export const UpdateQuestionSchema = z
-  .object({
-    title: trimmedText(255).optional(),
-    description: z.string().trim().max(2000).optional().nullable(),
-    required: z.boolean().optional(),
+    source: z.string().uuid(),
+    target: z.string().uuid(),
   })
   .strict();
 
-export const ReorderQuestionSchema = z
-  .object({
-    id: z.string().uuid(),
-    orderIndex: z.number().int().nonnegative(),
-  })
-  .strict();
+export const BuilderViewportSchema = z
+  .record(z.string(), z.unknown())
+  .default({});
 
-export const ReorderQuestionsSchema = z
+export const BuilderSchema = z
   .object({
-    questions: z.array(ReorderQuestionSchema).min(1),
+    nodes: z.array(BuilderNodeSchema),
+    edges: z.array(BuilderEdgeSchema),
+    viewport: BuilderViewportSchema,
   })
   .strict();
 
@@ -154,8 +139,6 @@ export const AnswerSchema = z
 
 export type CreateFormInput = z.infer<typeof CreateFormSchema>;
 export type UpdateFormInput = z.infer<typeof UpdateFormSchema>;
-export type QuestionInput = z.infer<typeof CreateQuestionSchema>;
-export type UpdateQuestionInput = z.infer<typeof UpdateQuestionSchema>;
-export type ReorderQuestionInput = z.infer<typeof ReorderQuestionSchema>;
+export type BuilderInput = z.infer<typeof BuilderSchema>;
 export type CreateOptionInput = z.infer<typeof CreateOptionSchema>;
 export type UpdateOptionInput = z.infer<typeof UpdateOptionSchema>;

@@ -22,6 +22,20 @@
       "when": 1783970752225,
       "tag": "0002_easy_mystique",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784477400000,
+      "tag": "0003_builder_graph",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784471001349,
+      "tag": "0004_cooing_victor_mancha",
+      "breakpoints": true
     }
   ]
 }
