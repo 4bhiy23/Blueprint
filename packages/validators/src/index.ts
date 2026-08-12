@@ -13,6 +13,12 @@ export const QUESTION_OPTION_TYPES = ["select", "radio", "checkbox"] as const;
 
 export const QuestionTypeSchema = z.enum(QUESTION_TYPES);
 export const QuestionOptionTypeSchema = z.enum(QUESTION_OPTION_TYPES);
+export const FormStatusSchema = z.enum([
+  "draft",
+  "published",
+  "closed",
+  "archived",
+]);
 
 const trimmedText = (max = 1000) =>
   z.string().trim().min(1).max(max);
@@ -23,7 +29,7 @@ export const FormSchema = z
     ownerId: z.string(),
     title: trimmedText(255),
     description: z.string().trim().max(2000).nullable(),
-    status: z.enum(["draft", "published", "closed", "archived"]),
+    status: FormStatusSchema,
     publicId: z.string(),
     createdAt: z.string().or(z.date()),
   })
@@ -36,35 +42,21 @@ export const CreateFormSchema = z
   })
   .strict();
 
-export const UpdateFormSchema = CreateFormSchema;
-
-export const QuestionOptionSchema = z
-  .object({
-    id: z.string().uuid(),
-    questionId: z.string().uuid(),
-    label: trimmedText(255),
-    orderIndex: z.number().int().nonnegative(),
-  })
-  .strict();
-
-export const CreateQuestionOptionSchema = z
-  .object({
-    label: trimmedText(255),
-    orderIndex: z.number().int().nonnegative(),
-  })
-  .strict();
-
-export const UpdateQuestionOptionSchema = z
-  .object({
-    label: trimmedText(255).optional(),
-    orderIndex: z.number().int().nonnegative().optional(),
-  })
-  .strict();
+export const UpdateFormSchema = CreateFormSchema.extend({
+  status: FormStatusSchema.optional(),
+});
 
 export const BuilderPositionSchema = z
   .object({
     x: z.number().finite(),
     y: z.number().finite(),
+  })
+  .strict();
+
+export const BuilderOptionSchema = z
+  .object({
+    id: z.string().uuid(),
+    label: trimmedText(255),
   })
   .strict();
 
@@ -78,6 +70,7 @@ export const BuilderNodeSchema = z
         title: trimmedText(255),
         description: z.string().trim().max(2000).default(""),
         required: z.boolean().default(false),
+        options: z.array(BuilderOptionSchema).default([]),
       })
       .strict(),
   })
@@ -102,20 +95,6 @@ export const BuilderSchema = z
   })
   .strict();
 
-export const CreateOptionSchema = z
-  .object({
-    label: trimmedText(255),
-    orderIndex: z.number().int().nonnegative(),
-  })
-  .strict();
-
-export const UpdateOptionSchema = z
-  .object({
-    label: trimmedText(255).optional(),
-    orderIndex: z.number().int().nonnegative().optional(),
-  })
-  .strict();
-
 export const ResponseSchema = z
   .object({
     id: z.string().uuid(),
@@ -137,8 +116,38 @@ export const AnswerSchema = z
   })
   .strict();
 
+export const SubmitAnswerSchema = z
+  .object({
+    questionId: z.string().uuid(),
+    optionIds: z.array(z.string().uuid()).optional(),
+    value: z.string().trim().max(1000).optional(),
+  })
+  .strict()
+  .refine(
+    (answer) =>
+      (answer.optionIds?.length ?? 0) > 0 || answer.value !== undefined,
+    "An answer must include at least one option id or a value.",
+  )
+  .refine(
+    (answer) =>
+      !((answer.optionIds?.length ?? 0) > 0 && answer.value !== undefined),
+    "An answer cannot include both option ids and a value.",
+  );
+
+export const SubmitResponseSchema = z
+  .object({
+    answers: z.array(SubmitAnswerSchema).max(200),
+    completionMs: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(86_400_000)
+      .optional(),
+  })
+  .strict();
+
 export type CreateFormInput = z.infer<typeof CreateFormSchema>;
 export type UpdateFormInput = z.infer<typeof UpdateFormSchema>;
 export type BuilderInput = z.infer<typeof BuilderSchema>;
-export type CreateOptionInput = z.infer<typeof CreateOptionSchema>;
-export type UpdateOptionInput = z.infer<typeof UpdateOptionSchema>;
+export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>;
+export type SubmitResponseInput = z.infer<typeof SubmitResponseSchema>;

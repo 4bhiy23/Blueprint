@@ -1,14 +1,12 @@
 import { Router } from "express";
-import healthRouter from './health.router.js'
-import formsRouter from './forms.router.js'
-import questionsRouter from "./questions.router.js";
-import optionsRouter from "./options.router.js";
+import healthRouter from "./health.router.js";
+import formsRouter from "./forms.router.js";
+import publicFormsRouter from "./public-forms.router.js";
 
-const router = Router()
+const router = Router();
 
-router.use("/health", healthRouter)
-router.use("/forms", formsRouter)
-router.use("/questions", questionsRouter)
-router.use("/options", optionsRouter)
+router.use("/health", healthRouter);
+router.use("/forms", formsRouter);
+router.use("/public", publicFormsRouter);
 
-export default router
+export default router;

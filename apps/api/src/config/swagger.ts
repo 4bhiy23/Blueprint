@@ -6,12 +6,12 @@ export const swaggerSpec = swaggerJSDoc({
     openapi: "3.0.3",
     info: {
       title: "Blueprint API",
-      version: "1.0.0",
+      version: "2.0.0",
       description: "Forms builder API for the Blueprint monorepo.",
     },
     servers: [
       {
-        url: "/api/v1",
+        url: "/api/v2",
         description: "Primary API",
       },
     ],

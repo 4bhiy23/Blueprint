@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
-  SlidersHorizontal,
   MoreVertical,
   ExternalLink,
   Copy,
@@ -38,64 +37,54 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
+import type { FormRecord, FormStatus } from "@/lib/forms";
 
 interface FormCardData {
   id: string;
   title: string;
   description: string;
-  status: "draft" | "published" | "closed";
+  status: FormStatus;
   responseCount: number;
-  lastEditedAt: string; // ISO date
-  lastEditedLabel: string;
+  createdAt: string;
+  createdLabel: string;
 }
 
-const INITIAL_MOCK_FORMS: FormCardData[] = [
-  {
-    id: "form_customer_feedback",
-    title: "Customer Satisfaction Survey",
-    description: "Gather feedback from our Q2 product beta users about the UI revamp.",
-    status: "published",
-    responseCount: 142,
-    lastEditedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hrs ago
-    lastEditedLabel: "2 hours ago",
-  },
-  {
-    id: "form_beta_signup",
-    title: "Developer Beta Interest List",
-    description: "Sign-up form for developers wanting access to our real-time synchronization API.",
-    status: "draft",
+function formatRelativeDate(value: string) {
+  const differenceMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(value).getTime()) / 60_000),
+  );
+
+  if (differenceMinutes < 1) return "just now";
+  if (differenceMinutes < 60) return `${differenceMinutes}m ago`;
+
+  const differenceHours = Math.floor(differenceMinutes / 60);
+  if (differenceHours < 24) return `${differenceHours}h ago`;
+
+  return `${Math.floor(differenceHours / 24)}d ago`;
+}
+
+function toFormCard(form: FormRecord): FormCardData {
+  return {
+    id: form.id,
+    title: form.title,
+    description: form.description ?? "",
+    status: form.status,
     responseCount: 0,
-    lastEditedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-    lastEditedLabel: "1 day ago",
-  },
-  {
-    id: "form_hackathon_reg",
-    title: "Summer Hackathon 2026 Registration",
-    description: "Collect participant teams, tech stacks, and dietary details.",
-    status: "published",
-    responseCount: 88,
-    lastEditedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-    lastEditedLabel: "3 days ago",
-  },
-  {
-    id: "form_user_research",
-    title: "User Experience Research Scheduling",
-    description: "Qualifying questionnaire for booking 1-on-1 feedback sessions.",
-    status: "closed",
-    responseCount: 312,
-    lastEditedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks ago
-    lastEditedLabel: "2 weeks ago",
-  },
-];
+    createdAt: form.createdAt,
+    createdLabel: formatRelativeDate(form.createdAt),
+  };
+}
 
 export default function DashboardPage() {
   const router = useRouter();
 
   // State management
-  const [forms, setForms] = useState<FormCardData[]>(INITIAL_MOCK_FORMS);
+  const [forms, setForms] = useState<FormCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<"all" | "draft" | "published" | "closed">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | FormStatus>("all");
   const [activeSort, setActiveSort] = useState<"recent" | "newest" | "oldest" | "alpha">("recent");
 
   // Rename modal states
@@ -107,34 +96,54 @@ export default function DashboardPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<FormCardData | null>(null);
 
-  // Simulate loading state
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    const loadForms = async () => {
+      try {
+        const response = await apiFetch<{ forms: FormRecord[] }>("/forms");
+        setForms(response.forms.map(toFormCard));
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Unable to load forms.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadForms();
   }, []);
 
   /* ─── Actions ──────────────────────────────────────────────────────────── */
-  const handleNewForm = () => {
-    const randomId = `form_${Math.random().toString(36).slice(2, 9)}`;
-    toast.success("Creating new form...");
-    router.push(`/forms/${randomId}`);
+  const handleNewForm = async () => {
+    try {
+      const response = await apiFetch<{ form: FormRecord }>("/forms", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      toast.success("Form created");
+      router.push(`/forms/${response.form.id}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to create the form.",
+      );
+    }
   };
 
-  const handleDuplicate = (form: FormCardData) => {
-    const duplicated: FormCardData = {
-      ...form,
-      id: `form_${Math.random().toString(36).slice(2, 9)}`,
-      title: `${form.title} (Copy)`,
-      responseCount: 0,
-      lastEditedAt: new Date().toISOString(),
-      lastEditedLabel: "Just now",
-    };
-    setForms([duplicated, ...forms]);
-    toast.success("Form duplicated", {
-      description: `Created copy of "${form.title}"`,
-    });
+  const handleDuplicate = async (form: FormCardData) => {
+    try {
+      const response = await apiFetch<{ form: FormRecord }>(
+        `/forms/${form.id}/duplicate`,
+        { method: "POST" },
+      );
+      setForms((currentForms) => [toFormCard(response.form), ...currentForms]);
+      toast.success("Form duplicated", {
+        description: `Created copy of "${form.title}"`,
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to duplicate the form.",
+      );
+    }
   };
 
   const openRenameDialog = (form: FormCardData) => {
@@ -143,25 +152,32 @@ export default function DashboardPage() {
     setRenameDialogOpen(true);
   };
 
-  const handleRename = () => {
-    if (!renameValue.trim()) {
+  const handleRename = async () => {
+    if (!renameValue.trim() || !formToRename) {
       toast.error("Form title cannot be empty");
       return;
     }
-    setForms(
-      forms.map((f) =>
-        f.id === formToRename?.id
-          ? {
-              ...f,
-              title: renameValue.trim(),
-              lastEditedAt: new Date().toISOString(),
-              lastEditedLabel: "Just now",
-            }
-          : f
-      )
-    );
-    setRenameDialogOpen(false);
-    toast.success("Form renamed successfully");
+
+    try {
+      const response = await apiFetch<{ form: FormRecord }>(
+        `/forms/${formToRename.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ title: renameValue.trim() }),
+        },
+      );
+      setForms((currentForms) =>
+        currentForms.map((form) =>
+          form.id === response.form.id ? toFormCard(response.form) : form,
+        ),
+      );
+      setRenameDialogOpen(false);
+      toast.success("Form renamed successfully");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to rename the form.",
+      );
+    }
   };
 
   const openDeleteDialog = (form: FormCardData) => {
@@ -169,13 +185,23 @@ export default function DashboardPage() {
     setDeleteDialogOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!formToDelete) return;
-    setForms(forms.filter((f) => f.id !== formToDelete.id));
-    setDeleteDialogOpen(false);
-    toast.success("Form deleted", {
-      description: `"${formToDelete.title}" has been deleted.`,
-    });
+
+    try {
+      await apiFetch<void>(`/forms/${formToDelete.id}`, { method: "DELETE" });
+      setForms((currentForms) =>
+        currentForms.filter((form) => form.id !== formToDelete.id),
+      );
+      setDeleteDialogOpen(false);
+      toast.success("Form deleted", {
+        description: `"${formToDelete.title}" has been deleted.`,
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete the form.",
+      );
+    }
   };
 
   /* ─── Filtering & Sorting ──────────────────────────────────────────────── */
@@ -195,13 +221,12 @@ export default function DashboardPage() {
       case "alpha":
         return a.title.localeCompare(b.title);
       case "newest":
-        return new Date(b.lastEditedAt).getTime() - new Date(a.lastEditedAt).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       case "oldest":
-        return new Date(a.lastEditedAt).getTime() - new Date(b.lastEditedAt).getTime();
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       case "recent":
       default:
-        // Default to recently updated
-        return new Date(b.lastEditedAt).getTime() - new Date(a.lastEditedAt).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
   });
 
@@ -239,7 +264,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-2">
           {/* Filters */}
           <div className="flex bg-muted/40 rounded-lg p-0.5 border border-border/60">
-            {(["all", "draft", "published", "closed"] as const).map((filter) => (
+            {(["all", "draft", "published", "closed", "archived"] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
@@ -430,7 +455,7 @@ export default function DashboardPage() {
 
               {/* Bottom Row: Stats */}
               <div className="flex items-center justify-between pt-5 mt-4 border-t border-border/50 text-[10px] text-muted-foreground font-medium">
-                <span>Edited {form.lastEditedLabel}</span>
+                <span>Created {form.createdLabel}</span>
                 <span className="flex items-center gap-1 font-semibold text-foreground/80 bg-muted/40 px-2 py-0.5 rounded">
                   <Sparkles className="h-3 w-3 text-primary shrink-0" />
                   {form.responseCount} response{form.responseCount !== 1 && "s"}

@@ -51,7 +51,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Better Auth
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
-app.use("/api/v1", router);
+app.use("/api/v2", router);
 
 
 // Global error handler

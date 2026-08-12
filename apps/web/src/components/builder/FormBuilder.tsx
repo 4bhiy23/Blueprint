@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -10,33 +11,79 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/sortable";
 import {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
   useReactFlow,
 } from "@xyflow/react";
-import { Toaster } from "sonner";
-import { toast } from "sonner";
-import { GripVertical } from "lucide-react";
+import { Toaster, toast } from "sonner";
+import { GripVertical, Loader2 } from "lucide-react";
 import { TopNav } from "./TopNav";
 import { ComponentLibrary } from "./ComponentLibrary";
 import { BuilderCanvas } from "./BuilderCanvas";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { apiFetch } from "@/lib/api";
+import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
 import {
   type BuilderNode,
+  type BuilderEdge,
   type QuestionNodeData,
   type QuestionType,
   type QuestionOption,
+  type QuestionFlowNode,
   QUESTION_TYPE_META,
   INITIAL_NODES,
   INITIAL_EDGES,
   CANVAS_DROP_ZONE_ID,
-  generateId,
+  START_NODE_ID,
+  SUBMIT_NODE_ID,
 } from "./types";
 
-/* ─── Drag overlay preview card ─────────────────────────────────────────── */
+interface FormRecord {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  publicId: string;
+}
+
+interface FormDetails {
+  form: FormRecord;
+}
+
+interface BackendBuilderNode {
+  id: string;
+  type: QuestionType;
+  position: { x: number; y: number };
+  data: {
+    title: string;
+    description: string;
+    required: boolean;
+    options: QuestionOption[];
+  };
+}
+
+interface BackendBuilderResponse {
+  nodes: BackendBuilderNode[];
+  edges: { source: string; target: string }[];
+  viewport: Record<string, unknown>;
+}
+
+// ─── Safe UUID generator ───────────────────────────────────────────────────
+function generateUUID(): string {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// ─── Drag overlay preview card ───────────────────────────────────────────
 function DragPreviewCard({ questionType }: { questionType: QuestionType }) {
   const meta = QUESTION_TYPE_META[questionType];
   const { Icon } = meta;
@@ -56,15 +103,19 @@ function DragPreviewCard({ questionType }: { questionType: QuestionType }) {
   );
 }
 
-/* ─── Inner builder — needs ReactFlowProvider ───────────────────────────── */
+// ─── Inner builder — needs ReactFlowProvider ─────────────────────────────
 function FormBuilderInner() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<BuilderNode>(
-    INITIAL_NODES as BuilderNode[]
-  );
-  const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
+  const params = useParams();
+  const formId = (params?.formId || params?.id) as string;
 
-  const [formTitle, setFormTitle] = useState("Untitled Form");
-  const [formDescription, setFormDescription] = useState("");
+  const [nodes, setNodes, onNodesChange] = useNodesState<BuilderNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<BuilderEdge>([]);
+
+  const [form, setForm] = useState<FormRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [draggedType, setDraggedType] = useState<QuestionType | null>(null);
 
@@ -79,6 +130,207 @@ function FormBuilderInner() {
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
+
+  // 1. Fetch Form Details & Builder Graph
+  useEffect(() => {
+    if (!formId) return;
+
+    const initData = async () => {
+      try {
+        const [formDetails, builderData] = await Promise.all([
+          apiFetch<FormDetails>(`/forms/${formId}`),
+          apiFetch<BackendBuilderResponse>(`/forms/${formId}/builder`),
+        ]);
+
+        setForm(formDetails.form);
+
+        // Convert backend builder schema to frontend React Flow nodes and edges
+        const backendNodes = builderData.nodes || [];
+        const backendEdges = builderData.edges || [];
+
+        // Map backend nodes to frontend representation
+        const questionNodes: BuilderNode[] = backendNodes.map((n) => ({
+          id: n.id,
+          type: "question",
+          position: n.position,
+          data: {
+            questionType: n.type,
+            title: n.data.title,
+            description: n.data.description,
+            required: n.data.required,
+            options: n.data.options,
+          },
+        }));
+
+        // Add virtual start/submit nodes
+        const finalNodes: BuilderNode[] = [
+          {
+            id: START_NODE_ID,
+            type: "start",
+            position: { x: 80, y: 220 },
+            data: { label: "Start" },
+            deletable: false,
+            draggable: true,
+          },
+          ...questionNodes,
+          {
+            id: SUBMIT_NODE_ID,
+            type: "submit",
+            position: { x: 560, y: 220 },
+            data: { label: "Submit" },
+            deletable: false,
+            draggable: true,
+          },
+        ];
+
+        // Construct frontend React Flow edges (backend edges + virtual start/submit edges)
+        const finalEdges: BuilderEdge[] = backendEdges.map((e) => ({
+          id: `edge_${e.source}_to_${e.target}`,
+          source: e.source,
+          target: e.target,
+          type: "deletable",
+        }));
+
+        // Find the start question node (question node with no incoming edges)
+        const incomingMap = new Set(backendEdges.map((e) => e.target));
+        const firstQuestionNode = backendNodes.find((n) => !incomingMap.has(n.id));
+        if (firstQuestionNode) {
+          finalEdges.push({
+            id: `edge_start_to_${firstQuestionNode.id}`,
+            source: START_NODE_ID,
+            target: firstQuestionNode.id,
+            type: "deletable",
+          });
+        }
+
+        // Find the last question node (question node with no outgoing edges)
+        const outgoingMap = new Set(backendEdges.map((e) => e.source));
+        const lastQuestionNode = backendNodes.find((n) => !outgoingMap.has(n.id));
+        if (lastQuestionNode) {
+          finalEdges.push({
+            id: `edge_${lastQuestionNode.id}_to_submit`,
+            source: lastQuestionNode.id,
+            target: SUBMIT_NODE_ID,
+            type: "deletable",
+          });
+        }
+
+        setNodes(finalNodes);
+        setEdges(finalEdges);
+        setIsLoaded(true);
+      } catch (error) {
+        toast.error("Unable to load the form builder.");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void initData();
+  }, [formId, setNodes, setEdges]);
+
+  // Helper: Serialize React Flow nodes and edges to Backend schema
+  const serializeToBackend = useCallback((currentNodes: BuilderNode[], currentEdges: any[]) => {
+    const questionNodes = currentNodes.filter((n) => n.type === "question") as QuestionFlowNode[];
+    const serializedNodes = questionNodes.map((n) => ({
+      id: n.id,
+      type: n.data.questionType,
+      position: n.position,
+      data: {
+        title: n.data.title || "Untitled Question",
+        description: n.data.description || "",
+        required: !!n.data.required,
+        options: n.data.options || [],
+      },
+    }));
+
+    // Filter out edges containing virtual nodes __start__ or __submit__
+    const questionEdges = currentEdges.filter(
+      (e) => e.source !== START_NODE_ID && e.target !== SUBMIT_NODE_ID
+    );
+    const serializedEdges = questionEdges.map((e) => ({
+      source: e.source,
+      target: e.target,
+    }));
+
+    return {
+      nodes: serializedNodes,
+      edges: serializedEdges,
+      viewport: rfInstance.getViewport(),
+    };
+  }, [rfInstance]);
+
+  // 2. Debounced API Autosave Graph
+  const debouncedSaveGraph = useDebouncedCallback(
+    async (currentNodes: BuilderNode[], currentEdges: any[]) => {
+      try {
+        const payload = serializeToBackend(currentNodes, currentEdges);
+        await apiFetch(`/forms/${formId}/builder`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        setSaveStatus("saved");
+      } catch (error) {
+        console.error("Autosave failed:", error);
+        setSaveStatus("error");
+      }
+    },
+    1000
+  );
+
+  const isInitialMountRef = useRef(true);
+
+  // Trigger save whenever nodes or edges change (skip initial load)
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    setSaveStatus("saving");
+    debouncedSaveGraph(nodes, edges);
+  }, [nodes, edges, isLoaded, debouncedSaveGraph]);
+
+  // 3. Debounced API Rename Form
+  const debouncedRenameForm = useDebouncedCallback(async (newTitle: string) => {
+    try {
+      await apiFetch(`/forms/${formId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title: newTitle }),
+      });
+      setSaveStatus("saved");
+    } catch (error) {
+      console.error("Rename failed:", error);
+      setSaveStatus("error");
+      toast.error("Unable to save form title.");
+    }
+  }, 1000);
+
+  const handleFormTitleChange = (newTitle: string) => {
+    if (!form) return;
+    setSaveStatus("saving");
+    setForm((f) => (f ? { ...f, title: newTitle } : f));
+    debouncedRenameForm(newTitle);
+  };
+
+  const handleFormDescriptionChange = async (newDescription: string) => {
+    if (!form) return;
+    setSaveStatus("saving");
+    setForm((f) => (f ? { ...f, description: newDescription } : f));
+
+    try {
+      await apiFetch(`/forms/${formId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ description: newDescription }),
+      });
+      setSaveStatus("saved");
+    } catch (error) {
+      console.error("Description update failed:", error);
+      setSaveStatus("error");
+    }
+  };
 
   /* ── DnD sensors ─────────────────────────────────────────────── */
   const sensors = useSensors(
@@ -107,7 +359,7 @@ function FormBuilderInner() {
         const position = rfInstance.screenToFlowPosition(pointerRef.current);
 
         const newNode: BuilderNode = {
-          id: generateId(),
+          id: generateUUID(),
           type: "question",
           position: {
             x: position.x - 128, // centre the 256px-wide card
@@ -214,6 +466,24 @@ function FormBuilderInner() {
     [setNodes]
   );
 
+  if (loading) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-sm text-muted-foreground mt-3 font-medium">Loading form builder...</p>
+      </div>
+    );
+  }
+
+  if (!form) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center bg-background p-4 text-center">
+        <h2 className="text-xl font-bold text-foreground mb-1">Form Not Found</h2>
+        <p className="text-sm text-muted-foreground">The builder was unable to load because this form could not be found.</p>
+      </div>
+    );
+  }
+
   /* ── Render ──────────────────────────────────────────────────── */
   return (
     <DndContext
@@ -224,11 +494,14 @@ function FormBuilderInner() {
       <div className="flex h-screen flex-col overflow-hidden bg-background">
         {/* Top navigation */}
         <TopNav
-          formTitle={formTitle}
-          onFormTitleChange={(t) => {
-            setFormTitle(t);
-            toast.success("Title updated");
-          }}
+          formId={form.id}
+          formTitle={form.title}
+          publicId={form.publicId}
+          status={form.status}
+          onFormTitleChange={handleFormTitleChange}
+          onStatusChange={(status) => setForm((f) => (f ? { ...f, status } : f))}
+          saveStatus={saveStatus}
+          onSaveStatusChange={setSaveStatus}
         />
 
         {/* Three-panel body */}
@@ -249,10 +522,10 @@ function FormBuilderInner() {
           {/* Right sidebar */}
           <PropertiesPanel
             selectedNodeData={selectedNodeData}
-            formTitle={formTitle}
-            formDescription={formDescription}
-            onFormTitleChange={setFormTitle}
-            onFormDescriptionChange={setFormDescription}
+            formTitle={form.title}
+            formDescription={form.description || ""}
+            onFormTitleChange={handleFormTitleChange}
+            onFormDescriptionChange={handleFormDescriptionChange}
             onQuestionDataChange={handleQuestionDataChange}
             onOptionsReorder={handleOptionsReorder}
           />
@@ -267,7 +540,7 @@ function FormBuilderInner() {
   );
 }
 
-/* ─── Public entry point — wraps in ReactFlowProvider ──────────────────── */
+// ─── Public entry point — wraps in ReactFlowProvider ────────────────────
 export function FormBuilder() {
   return (
     <>

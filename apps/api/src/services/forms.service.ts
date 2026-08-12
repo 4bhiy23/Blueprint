@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import {
-  sql,
   and,
+  answers,
   db,
   eq,
   forms,
@@ -10,8 +10,10 @@ import {
   questionEdges,
   inArray,
   notInArray,
+  responses,
 } from "@repo/db";
-import type { BuilderInput } from "@repo/validators";
+import type { BuilderInput, SubmitAnswerInput } from "@repo/validators";
+import { QUESTION_OPTION_TYPES } from "@repo/validators";
 
 function createPublicId() {
   return `frm_${randomBytes(6).toString("base64url")}`;
@@ -29,7 +31,10 @@ function serializeFormQuestion(
   };
 }
 
-function serializeBuilderQuestion(question: typeof questions.$inferSelect) {
+function serializeBuilderQuestion(
+  question: typeof questions.$inferSelect,
+  options: (typeof questionOptions.$inferSelect)[],
+) {
   return {
     id: question.id,
     type: question.type,
@@ -41,6 +46,10 @@ function serializeBuilderQuestion(question: typeof questions.$inferSelect) {
       title: question.title,
       description: question.description ?? "",
       required: question.required,
+      options: options
+        .filter((option) => option.questionId === question.id)
+        .sort((left, right) => left.orderIndex - right.orderIndex)
+        .map((option) => ({ id: option.id, label: option.label })),
     },
   };
 }
@@ -49,6 +58,13 @@ export class BuilderValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "BuilderValidationError";
+  }
+}
+
+export class SubmissionValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SubmissionValidationError";
   }
 }
 
@@ -65,12 +81,34 @@ function validateBuilderGraph(builder: BuilderInput) {
   }
 
   const nodeIds = new Set<string>();
+  const optionIds = new Set<string>();
   for (const node of builder.nodes) {
     if (nodeIds.has(node.id)) {
       throw new BuilderValidationError("Builder graph contains duplicate node ids.");
     }
 
     nodeIds.add(node.id);
+
+    if (
+      !QUESTION_OPTION_TYPES.includes(
+        node.type as (typeof QUESTION_OPTION_TYPES)[number],
+      ) &&
+      node.data.options.length > 0
+    ) {
+      throw new BuilderValidationError(
+        "Only select, radio, and checkbox questions can contain options.",
+      );
+    }
+
+    for (const option of node.data.options) {
+      if (optionIds.has(option.id)) {
+        throw new BuilderValidationError(
+          "Builder graph contains duplicate option ids.",
+        );
+      }
+
+      optionIds.add(option.id);
+    }
   }
 
   const incoming = new Map<string, number>();
@@ -195,11 +233,239 @@ export async function getFormForUser(input: {
   };
 }
 
+export async function getPublicFormForResponder(publicId: string) {
+  const form = await db.query.forms.findFirst({
+    where: (formsTable, { and, eq }) =>
+      and(
+        eq(formsTable.publicId, publicId),
+        eq(formsTable.status, "published"),
+      ),
+  });
+
+  if (!form) {
+    return null;
+  }
+
+  const formQuestions = await db.query.questions.findMany({
+    where: (questionsTable, { eq }) => eq(questionsTable.formId, form.id),
+    orderBy: (questionsTable, { asc }) => [asc(questionsTable.orderIndex)],
+  });
+  const questionIds = formQuestions.map((question) => question.id);
+  const formOptions = questionIds.length
+    ? await db.query.questionOptions.findMany({
+        where: (optionsTable, { inArray }) =>
+          inArray(optionsTable.questionId, questionIds),
+        orderBy: (optionsTable, { asc }) => [asc(optionsTable.orderIndex)],
+      })
+    : [];
+  return {
+    form: {
+      id: form.id,
+      publicId: form.publicId,
+      title: form.title,
+      description: form.description,
+    },
+    questions: formQuestions.map((question) => ({
+      id: question.id,
+      title: question.title,
+      description: question.description,
+      type: question.type,
+      required: question.required,
+      options: serializeFormQuestion(question, formOptions).options.map(
+        (option) => ({
+          id: option.id,
+          label: option.label,
+        }),
+      ),
+    })),
+  };
+}
+
+export async function submitResponseForPublicForm(input: {
+  publicId: string;
+  answers: SubmitAnswerInput[];
+  completionMs?: number;
+  ipHash?: string | null;
+  userAgent?: string | null;
+}) {
+  const form = await db.query.forms.findFirst({
+    where: (formsTable, { and, eq }) =>
+      and(
+        eq(formsTable.publicId, input.publicId),
+        eq(formsTable.status, "published"),
+      ),
+  });
+
+  if (!form) {
+    return null;
+  }
+
+  const formQuestions = await db.query.questions.findMany({
+    where: (questionsTable, { eq }) => eq(questionsTable.formId, form.id),
+    orderBy: (questionsTable, { asc }) => [asc(questionsTable.orderIndex)],
+  });
+
+  const questionIds = formQuestions.map((question) => question.id);
+  const formOptions = questionIds.length
+    ? await db.query.questionOptions.findMany({
+        where: (optionsTable, { inArray }) =>
+          inArray(optionsTable.questionId, questionIds),
+      })
+    : [];
+
+  const questionsById = new Map(formQuestions.map((question) => [question.id, question]));
+  const validOptionIdsByQuestionId = new Map<string, Set<string>>();
+  for (const option of formOptions) {
+    const optionIds = validOptionIdsByQuestionId.get(option.questionId) ?? new Set<string>();
+    optionIds.add(option.id);
+    validOptionIdsByQuestionId.set(option.questionId, optionIds);
+  }
+
+  const answersByQuestionId = new Map<string, SubmitAnswerInput>();
+  for (const answer of input.answers) {
+    if (!questionsById.has(answer.questionId)) {
+      throw new SubmissionValidationError(
+        "Submission contains a question that does not belong to this form.",
+      );
+    }
+
+    if (answersByQuestionId.has(answer.questionId)) {
+      throw new SubmissionValidationError("Each question may only be answered once.");
+    }
+
+    answersByQuestionId.set(answer.questionId, answer);
+  }
+
+  const answerRows: {
+    questionId: string;
+    optionIds: string[];
+    value: string | null;
+  }[] = [];
+
+  for (const question of formQuestions) {
+    const answer = answersByQuestionId.get(question.id);
+    const validOptionIds = validOptionIdsByQuestionId.get(question.id) ?? new Set<string>();
+    const optionIds = answer?.optionIds ?? [];
+    const value = answer?.value?.trim();
+
+    if (["select", "radio", "checkbox"].includes(question.type)) {
+      if (optionIds.length === 0) {
+        if (question.required) {
+          throw new SubmissionValidationError(
+            `Question "${question.title}" is required.`,
+          );
+        }
+        continue;
+      }
+
+      for (const optionId of optionIds) {
+        if (!validOptionIds.has(optionId)) {
+          throw new SubmissionValidationError(
+            `Invalid option for question "${question.title}".`,
+          );
+        }
+      }
+
+      if (question.type !== "checkbox" && optionIds.length !== 1) {
+        throw new SubmissionValidationError(
+          `Question "${question.title}" requires exactly one selection.`,
+        );
+      }
+
+      answerRows.push({ questionId: question.id, optionIds, value: null });
+      continue;
+    }
+
+    if (optionIds.length > 0) {
+      throw new SubmissionValidationError(
+        `Question "${question.title}" does not accept options.`,
+      );
+    }
+
+    if (!value) {
+      if (question.required) {
+        throw new SubmissionValidationError(
+          `Question "${question.title}" is required.`,
+        );
+      }
+      continue;
+    }
+
+    if (question.type === "number" && Number.isNaN(Number(value))) {
+      throw new SubmissionValidationError(
+        `Question "${question.title}" must be a number.`,
+      );
+    }
+
+    if (
+      question.type === "email" &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    ) {
+      throw new SubmissionValidationError(
+        `Question "${question.title}" must be a valid email.`,
+      );
+    }
+
+    answerRows.push({ questionId: question.id, optionIds: [], value });
+  }
+
+  return db.transaction(async (tx) => {
+    const [response] = await tx
+      .insert(responses)
+      .values({
+        formId: form.id,
+        completionMs: input.completionMs ?? null,
+        ipHash: input.ipHash ?? null,
+        userAgent: input.userAgent ?? null,
+      })
+      .returning();
+
+    const rows: {
+      responseId: string;
+      questionId: string;
+      optionId: string | null;
+      value: string | null;
+    }[] = [];
+
+    for (const row of answerRows) {
+      if (row.optionIds.length > 0) {
+        for (const optionId of row.optionIds) {
+          rows.push({
+            responseId: response.id,
+            questionId: row.questionId,
+            optionId,
+            value: null,
+          });
+        }
+      } else {
+        rows.push({
+          responseId: response.id,
+          questionId: row.questionId,
+          optionId: null,
+          value: row.value,
+        });
+      }
+    }
+
+    if (rows.length > 0) {
+      await tx.insert(answers).values(rows);
+    }
+
+    return {
+      id: response.id,
+      formId: response.formId,
+      submittedAt: response.submittedAt,
+      completionMs: response.completionMs,
+    };
+  });
+}
+
 export async function updateFormForUser(input: {
   userId: string;
   formId: string;
   title?: string;
   description?: string;
+  status?: "draft" | "published" | "closed" | "archived";
 }) {
   const existingForm = await db.query.forms.findFirst({
     where: (formsTable, { and, eq }) =>
@@ -220,6 +486,7 @@ export async function updateFormForUser(input: {
       ...(input.description !== undefined
         ? { description: input.description.trim() || null }
         : {}),
+      ...(input.status !== undefined ? { status: input.status } : {}),
     })
     .where(eq(forms.id, existingForm.id))
     .returning();
@@ -358,22 +625,6 @@ export async function duplicateFormForUser(input: {
   });
 }
 
-// Questions
-export async function checkFormForUser(userId: string, formId: string) {
-  const [result] = await db
-    .select({ exists: sql<boolean>`true` })
-    .from(forms)
-    .where(
-      and(
-        eq(forms.id, formId),
-        eq(forms.ownerId, userId),
-      ),
-    )
-    .limit(1);
-
-  return !!result;
-}
-
 export async function getBuilderForUser(input: {
   userId: string;
   formId: string;
@@ -399,8 +650,19 @@ export async function getBuilderForUser(input: {
     where: (edgesTable, { eq }) => eq(edgesTable.formId, input.formId),
   });
 
+  const questionIds = formQuestions.map((question) => question.id);
+  const formOptions = questionIds.length
+    ? await db.query.questionOptions.findMany({
+        where: (optionsTable, { inArray }) =>
+          inArray(optionsTable.questionId, questionIds),
+        orderBy: (optionsTable, { asc }) => [asc(optionsTable.orderIndex)],
+      })
+    : [];
+
   return {
-    nodes: formQuestions.map(serializeBuilderQuestion),
+    nodes: formQuestions.map((question) =>
+      serializeBuilderQuestion(question, formOptions),
+    ),
     edges: formEdges.map((edge) => ({
       source: edge.sourceQuestionId,
       target: edge.targetQuestionId,
@@ -429,6 +691,9 @@ export async function saveBuilderForUser(input: {
     }
 
     const incomingIds = input.builder.nodes.map((node) => node.id);
+    const incomingOptionIds = input.builder.nodes.flatMap((node) =>
+      node.data.options.map((option) => option.id),
+    );
 
     if (incomingIds.length > 0) {
       const existingQuestions = await tx.query.questions.findMany({
@@ -441,13 +706,52 @@ export async function saveBuilderForUser(input: {
       );
 
       if (conflictingQuestion) {
-        throw new BuilderValidationError("Builder graph contains a question from another form.");
+        throw new BuilderValidationError(
+          "Builder graph contains a question from another form.",
+        );
+      }
+    }
+
+    if (incomingOptionIds.length > 0) {
+      const existingOptions = await tx.query.questionOptions.findMany({
+        where: (optionsTable, { inArray }) =>
+          inArray(optionsTable.id, incomingOptionIds),
+      });
+      const existingOptionQuestionIds = [
+        ...new Set(existingOptions.map((option) => option.questionId)),
+      ];
+      const existingOptionQuestions = existingOptionQuestionIds.length
+        ? await tx.query.questions.findMany({
+            where: (questionsTable, { inArray }) =>
+              inArray(questionsTable.id, existingOptionQuestionIds),
+          })
+        : [];
+
+      if (
+        existingOptionQuestions.some(
+          (question) => question.formId !== input.formId,
+        )
+      ) {
+        throw new BuilderValidationError(
+          "Builder graph contains an option from another form.",
+        );
       }
     }
 
     const orderIndexByQuestionId = new Map(
       order.map((questionId, orderIndex) => [questionId, orderIndex]),
     );
+
+    await tx
+      .delete(questions)
+      .where(
+        incomingIds.length > 0
+          ? and(
+              eq(questions.formId, input.formId),
+              notInArray(questions.id, incomingIds),
+            )
+          : eq(questions.formId, input.formId),
+      );
 
     for (const node of input.builder.nodes) {
       await tx
@@ -474,19 +778,27 @@ export async function saveBuilderForUser(input: {
             positionX: node.position.x,
             positionY: node.position.y,
           },
-        });
+      });
     }
 
-    await tx
-      .delete(questions)
-      .where(
-        incomingIds.length > 0
-          ? and(
-              eq(questions.formId, input.formId),
-              notInArray(questions.id, incomingIds),
-            )
-          : eq(questions.formId, input.formId),
+    if (incomingIds.length > 0) {
+      await tx
+        .delete(questionOptions)
+        .where(inArray(questionOptions.questionId, incomingIds));
+
+      const options = input.builder.nodes.flatMap((node) =>
+        node.data.options.map((option, orderIndex) => ({
+          id: option.id,
+          questionId: node.id,
+          label: option.label,
+          orderIndex,
+        })),
       );
+
+      if (options.length > 0) {
+        await tx.insert(questionOptions).values(options);
+      }
+    }
 
     await tx.delete(questionEdges).where(eq(questionEdges.formId, input.formId));
 
@@ -514,6 +826,7 @@ export async function saveBuilderForUser(input: {
         data: {
           ...node.data,
           description: node.data.description || "",
+          options: node.data.options,
         },
       })),
       edges: input.builder.edges,

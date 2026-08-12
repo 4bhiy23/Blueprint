@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import {
-  checkFormForUser,
   createFormForUser,
   deleteFormForUser,
   duplicateFormForUser,
@@ -115,6 +114,7 @@ export async function updateForm(req: Request, res: Response) {
     formId,
     title: parsed.data.title,
     description: parsed.data.description,
+    status: parsed.data.status,
   });
 
   if (!form) {

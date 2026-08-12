@@ -4,12 +4,13 @@
  *   schemas:
  *     ErrorResponse:
  *       type: object
+ *       required: [error]
  *       properties:
  *         error:
  *           type: string
- *         message:
- *           type: string
- *       additionalProperties: true
+ *         issues:
+ *           type: object
+ *           additionalProperties: true
  *     FormStatus:
  *       type: string
  *       enum: [draft, published, closed, archived]
@@ -18,6 +19,7 @@
  *       enum: [text, number, email, select, radio, checkbox]
  *     Form:
  *       type: object
+ *       required: [id, ownerId, title, status, publicId, createdAt]
  *       properties:
  *         id:
  *           type: string
@@ -37,12 +39,16 @@
  *           type: string
  *           format: uuid
  *           nullable: true
+ *         builderViewport:
+ *           type: object
+ *           nullable: true
+ *           additionalProperties: true
  *         createdAt:
  *           type: string
  *           format: date-time
- *       required: [id, ownerId, title, status, publicId, createdAt]
  *     QuestionOption:
  *       type: object
+ *       required: [id, questionId, label, orderIndex]
  *       properties:
  *         id:
  *           type: string
@@ -55,9 +61,9 @@
  *         orderIndex:
  *           type: integer
  *           minimum: 0
- *       required: [id, questionId, label, orderIndex]
  *     Question:
  *       type: object
+ *       required: [id, formId, title, type, required, orderIndex, options]
  *       properties:
  *         id:
  *           type: string
@@ -77,13 +83,214 @@
  *         orderIndex:
  *           type: integer
  *           minimum: 0
+ *         positionX:
+ *           type: number
+ *         positionY:
+ *           type: number
  *         options:
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/QuestionOption'
- *       required: [id, formId, title, type, required, orderIndex]
- *     Response:
+ *     PublicForm:
  *       type: object
+ *       required: [id, publicId, title]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         publicId:
+ *           type: string
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *           nullable: true
+ *     PublicQuestionOption:
+ *       type: object
+ *       required: [id, label]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         label:
+ *           type: string
+ *     PublicQuestion:
+ *       type: object
+ *       required: [id, title, type, required, options]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *           nullable: true
+ *         type:
+ *           $ref: '#/components/schemas/QuestionType'
+ *         required:
+ *           type: boolean
+ *         options:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/PublicQuestionOption'
+ *     BuilderPosition:
+ *       type: object
+ *       required: [x, y]
+ *       properties:
+ *         x:
+ *           type: number
+ *         y:
+ *           type: number
+ *     BuilderOption:
+ *       type: object
+ *       required: [id, label]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         label:
+ *           type: string
+ *     BuilderNodeData:
+ *       type: object
+ *       required: [title]
+ *       properties:
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *           default: ''
+ *         required:
+ *           type: boolean
+ *           default: false
+ *         options:
+ *           type: array
+ *           default: []
+ *           items:
+ *             $ref: '#/components/schemas/BuilderOption'
+ *       additionalProperties: false
+ *     BuilderNode:
+ *       type: object
+ *       required: [id, type, position, data]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         type:
+ *           $ref: '#/components/schemas/QuestionType'
+ *         position:
+ *           $ref: '#/components/schemas/BuilderPosition'
+ *         data:
+ *           $ref: '#/components/schemas/BuilderNodeData'
+ *       additionalProperties: false
+ *     BuilderEdge:
+ *       type: object
+ *       required: [source, target]
+ *       properties:
+ *         source:
+ *           type: string
+ *           format: uuid
+ *         target:
+ *           type: string
+ *           format: uuid
+ *       additionalProperties: false
+ *     Builder:
+ *       type: object
+ *       required: [nodes, edges, viewport]
+ *       properties:
+ *         nodes:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/BuilderNode'
+ *         edges:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/BuilderEdge'
+ *         viewport:
+ *           type: object
+ *           additionalProperties: true
+ *       additionalProperties: false
+ *     CreateFormRequest:
+ *       type: object
+ *       additionalProperties: false
+ *       properties:
+ *         title:
+ *           type: string
+ *           maxLength: 255
+ *         description:
+ *           type: string
+ *           maxLength: 2000
+ *     UpdateFormRequest:
+ *       type: object
+ *       additionalProperties: false
+ *       properties:
+ *         title:
+ *           type: string
+ *           maxLength: 255
+ *         description:
+ *           type: string
+ *           maxLength: 2000
+ *         status:
+ *           $ref: '#/components/schemas/FormStatus'
+ *     FormDetailsResponse:
+ *       type: object
+ *       required: [form, questions]
+ *       properties:
+ *         form:
+ *           $ref: '#/components/schemas/Form'
+ *         questions:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Question'
+ *     PublicFormResponse:
+ *       type: object
+ *       required: [form, questions]
+ *       properties:
+ *         form:
+ *           $ref: '#/components/schemas/PublicForm'
+ *         questions:
+ *           type: array
+ *           description: Questions are already ordered for one-at-a-time rendering.
+ *           items:
+ *             $ref: '#/components/schemas/PublicQuestion'
+ *     SubmitAnswerRequest:
+ *       description: Provide optionIds for select/radio/checkbox answers or value for text/number/email answers, never both.
+ *       type: object
+ *       required: [questionId]
+ *       properties:
+ *         questionId:
+ *           type: string
+ *           format: uuid
+ *         optionIds:
+ *           type: array
+ *           minItems: 1
+ *           items:
+ *             type: string
+ *             format: uuid
+ *         value:
+ *           type: string
+ *           maxLength: 1000
+ *       oneOf:
+ *         - required: [optionIds]
+ *         - required: [value]
+ *       additionalProperties: false
+ *     SubmitResponseRequest:
+ *       type: object
+ *       required: [answers]
+ *       properties:
+ *         answers:
+ *           type: array
+ *           maxItems: 200
+ *           items:
+ *             $ref: '#/components/schemas/SubmitAnswerRequest'
+ *         completionMs:
+ *           type: integer
+ *           minimum: 0
+ *           maximum: 86400000
+ *       additionalProperties: false
+ *     SubmittedResponse:
+ *       type: object
+ *       required: [id, formId, submittedAt]
  *       properties:
  *         id:
  *           type: string
@@ -97,111 +304,124 @@
  *         completionMs:
  *           type: integer
  *           nullable: true
- *         ipHash:
- *           type: string
- *           nullable: true
- *         userAgent:
- *           type: string
- *           nullable: true
- *       required: [id, formId, submittedAt]
- *     Answer:
+ *     SubmitResponseResponse:
  *       type: object
+ *       required: [response]
  *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         responseId:
- *           type: string
- *           format: uuid
- *         questionId:
- *           type: string
- *           format: uuid
- *         optionId:
- *           type: string
- *           format: uuid
- *           nullable: true
- *         value:
- *           type: string
- *           nullable: true
- *       required: [id, responseId, questionId]
- *     User:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *         name:
- *           type: string
- *           nullable: true
- *         email:
- *           type: string
- *           format: email
- *           nullable: true
- *       required: [id]
- *     Session:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *         expiresAt:
- *           type: string
- *           format: date-time
- *       required: [id]
- *     Account:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *         providerId:
- *           type: string
- *       required: [id, providerId]
- *     Verification:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *         identifier:
- *           type: string
- *       required: [id, identifier]
- *     CreateFormRequest:
- *       type: object
- *       properties:
- *         title:
- *           type: string
- *         description:
- *           type: string
- *       additionalProperties: false
- *     UpdateFormRequest:
- *       $ref: '#/components/schemas/CreateFormRequest'
- *     CreateOptionRequest:
- *       type: object
- *       properties:
- *         label:
- *           type: string
- *         orderIndex:
- *           type: integer
- *           minimum: 0
- *       required: [label, orderIndex]
- *       additionalProperties: false
- *     UpdateOptionRequest:
- *       type: object
- *       properties:
- *         label:
- *           type: string
- *         orderIndex:
- *           type: integer
- *           minimum: 0
- *       additionalProperties: false
- * /api/v1/health:
+ *         response:
+ *           $ref: '#/components/schemas/SubmittedResponse'
+ *   parameters:
+ *     FormId:
+ *       in: path
+ *       name: id
+ *       required: true
+ *       schema:
+ *         type: string
+ *         format: uuid
+ *     PublicId:
+ *       in: path
+ *       name: publicId
+ *       required: true
+ *       schema:
+ *         type: string
+ *   responses:
+ *     InvalidRequest:
+ *       description: Invalid request
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ErrorResponse'
+ *     Unauthorized:
+ *       description: Authentication is required
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ErrorResponse'
+ *     FormNotFound:
+ *       description: Form not found
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ErrorResponse'
+ * /health:
  *   get:
  *     tags: [Health]
  *     summary: Health check
  *     responses:
  *       '200':
  *         description: API is running
- * /api/v1/forms:
+ * /public/forms/{publicId}:
+ *   get:
+ *     tags: [Public Forms]
+ *     summary: Get a published form for a responder
+ *     parameters:
+ *       - $ref: '#/components/parameters/PublicId'
+ *     responses:
+ *       '200':
+ *         description: Published form and its ordered questions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PublicFormResponse'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidRequest'
+ *       '404':
+ *         description: Published form not found
+ * /public/forms/{publicId}/responses:
+ *   post:
+ *     tags: [Public Forms]
+ *     summary: Submit a response to a published form
+ *     parameters:
+ *       - $ref: '#/components/parameters/PublicId'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SubmitResponseRequest'
+ *     responses:
+ *       '201':
+ *         description: Response recorded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SubmitResponseResponse'
+ *       '400':
+ *         description: Invalid body or answers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '404':
+ *         description: Published form not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ * /forms:
+ *   get:
+ *     tags: [Forms]
+ *     summary: List forms for the authenticated owner
+ *     description: Requires a Better Auth session cookie.
+ *     responses:
+ *       '200':
+ *         description: Forms list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [forms]
+ *               properties:
+ *                 forms:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Form'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *   post:
  *     tags: [Forms]
- *     summary: Create a form
+ *     summary: Create a draft form
+ *     description: Requires a Better Auth session cookie.
  *     requestBody:
  *       required: false
  *       content:
@@ -210,61 +430,41 @@
  *             $ref: '#/components/schemas/CreateFormRequest'
  *     responses:
  *       '201':
- *         description: Created
+ *         description: Form created
  *         content:
  *           application/json:
  *             schema:
  *               type: object
+ *               required: [form]
  *               properties:
  *                 form:
  *                   $ref: '#/components/schemas/Form'
  *       '400':
- *         description: Invalid request body
+ *         $ref: '#/components/responses/InvalidRequest'
  *       '401':
- *         description: Unauthorized
+ *         $ref: '#/components/responses/Unauthorized'
+ * /forms/{id}:
  *   get:
  *     tags: [Forms]
- *     summary: List forms for the current user
+ *     summary: Get an owned form with ordered questions and options
+ *     parameters:
+ *       - $ref: '#/components/parameters/FormId'
  *     responses:
  *       '200':
- *         description: Forms list
+ *         description: Form details
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 forms:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Form'
+ *               $ref: '#/components/schemas/FormDetailsResponse'
  *       '401':
- *         description: Unauthorized
- * /api/v1/forms/{id}:
- *   get:
- *     tags: [Forms]
- *     summary: Get one form and its questions
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       '200':
- *         description: Form payload
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
- *         description: Form not found
+ *         $ref: '#/components/responses/FormNotFound'
  *   patch:
  *     tags: [Forms]
- *     summary: Update form metadata
+ *     summary: Update owned form metadata or status
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/FormId'
  *     requestBody:
  *       required: false
  *       content:
@@ -274,186 +474,106 @@
  *     responses:
  *       '200':
  *         description: Updated form
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [form]
+ *               properties:
+ *                 form:
+ *                   $ref: '#/components/schemas/Form'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
- *         description: Form not found
+ *         $ref: '#/components/responses/FormNotFound'
  *   delete:
  *     tags: [Forms]
- *     summary: Delete a form
+ *     summary: Delete an owned form and its dependent data
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/FormId'
  *     responses:
  *       '200':
- *         description: Deleted
+ *         description: Form deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [success]
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
- *         description: Form not found
- * /api/v1/forms/{id}/duplicate:
+ *         $ref: '#/components/responses/FormNotFound'
+ * /forms/{id}/duplicate:
  *   post:
  *     tags: [Forms]
- *     summary: Duplicate a form
+ *     summary: Duplicate an owned form, questions, options, and graph
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/FormId'
  *     responses:
  *       '201':
- *         description: Duplicated
+ *         description: Duplicated form
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [form]
+ *               properties:
+ *                 form:
+ *                   $ref: '#/components/schemas/Form'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
- *         description: Form not found
- * /api/v1/forms/{id}/builder:
+ *         $ref: '#/components/responses/FormNotFound'
+ * /forms/{id}/builder:
  *   get:
- *     tags: [Forms]
- *     summary: Get a form builder graph
+ *     tags: [Builder]
+ *     summary: Get an owned form's persisted builder graph
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/FormId'
  *     responses:
  *       '200':
  *         description: Builder graph
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Builder'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
- *         description: Form not found
+ *         $ref: '#/components/responses/FormNotFound'
  *   put:
- *     tags: [Forms]
- *     summary: Save a form builder graph
+ *     tags: [Builder]
+ *     summary: Transactionally save an owned form's complete builder graph
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/FormId'
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               nodes:
- *                 type: array
- *                 items:
- *                   type: object
- *                   required: [id, type, position, data]
- *                   properties:
- *                     id:
- *                       type: string
- *                       format: uuid
- *                     type:
- *                       $ref: '#/components/schemas/QuestionType'
- *                     position:
- *                       type: object
- *                       required: [x, y]
- *                       properties:
- *                         x:
- *                           type: number
- *                         y:
- *                           type: number
- *                     data:
- *                       type: object
- *                       required: [title, description, required]
- *                       properties:
- *                         title:
- *                           type: string
- *                         description:
- *                           type: string
- *                         required:
- *                           type: boolean
- *               edges:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     source:
- *                       type: string
- *                       format: uuid
- *                     target:
- *                       type: string
- *                       format: uuid
- *                   required: [source, target]
- *               viewport:
- *                 type: object
- *             required: [nodes, edges, viewport]
- *             additionalProperties: false
+ *             $ref: '#/components/schemas/Builder'
  *     responses:
  *       '200':
- *         description: Builder graph saved
+ *         description: Saved builder graph
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Builder'
  *       '400':
- *         description: Invalid builder payload or graph
+ *         description: Invalid payload or graph
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
- *         description: Form not found
- * /api/v1/questions/{questionId}/options:
- *   post:
- *     tags: [Questions]
- *     summary: Add an option to a question
- *     parameters:
- *       - in: path
- *         name: questionId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateOptionRequest'
- *     responses:
- *       '201':
- *         description: Created option
- *       '400':
- *         description: Invalid request body
- *       '404':
- *         description: Question not found
- * /api/v1/options/{optionId}:
- *   patch:
- *     tags: [Options]
- *     summary: Update an option
- *     parameters:
- *       - in: path
- *         name: optionId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateOptionRequest'
- *     responses:
- *       '200':
- *         description: Updated option
- *       '400':
- *         description: Invalid request body
- *       '404':
- *         description: Option not found
- *   delete:
- *     tags: [Options]
- *     summary: Delete an option
- *     parameters:
- *       - in: path
- *         name: optionId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       '204':
- *         description: Deleted
- *       '404':
- *         description: Option not found
+ *         $ref: '#/components/responses/FormNotFound'
  */
 export const openApiDocs = true;

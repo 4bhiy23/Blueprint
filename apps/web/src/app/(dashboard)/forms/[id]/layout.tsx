@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import {
@@ -17,42 +17,12 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-
-/* ─── Mock DB lookup by dynamic ID ─────────────────────────────────────── */
-interface FormDetailsData {
-  id: string;
-  title: string;
-  status: "draft" | "published" | "closed";
-}
-
-const MOCK_FORMS_DB: Record<string, FormDetailsData> = {
-  form_customer_feedback: {
-    id: "form_customer_feedback",
-    title: "Customer Satisfaction Survey",
-    status: "published",
-  },
-  form_beta_signup: {
-    id: "form_beta_signup",
-    title: "Developer Beta Interest List",
-    status: "draft",
-  },
-  form_hackathon_reg: {
-    id: "form_hackathon_reg",
-    title: "Summer Hackathon 2026 Registration",
-    status: "published",
-  },
-  form_user_research: {
-    id: "form_user_research",
-    title: "User Experience Research Scheduling",
-    status: "closed",
-  },
-};
-
-const DEFAULT_FORM: FormDetailsData = {
-  id: "new_form",
-  title: "Untitled Form",
-  status: "draft",
-};
+import { apiFetch } from "@/lib/api";
+import {
+  FORM_UPDATED_EVENT,
+  type FormDetails,
+  type FormRecord,
+} from "@/lib/forms";
 
 export default function FormDetailsLayout({
   children,
@@ -64,8 +34,35 @@ export default function FormDetailsLayout({
   const formId = (params?.formId || params?.id) as string;
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [form, setForm] = useState<FormRecord | null>(null);
 
-  const form = MOCK_FORMS_DB[formId] || { ...DEFAULT_FORM, id: formId };
+  useEffect(() => {
+    if (!formId) return;
+
+    const loadForm = async () => {
+      try {
+        const response = await apiFetch<FormDetails>(`/forms/${formId}`);
+        setForm(response.form);
+      } catch {
+        setForm(null);
+      }
+    };
+
+    void loadForm();
+  }, [formId]);
+
+  useEffect(() => {
+    const handleFormUpdated = (event: Event) => {
+      const updatedForm = (event as CustomEvent<FormRecord>).detail;
+
+      if (updatedForm?.id === formId) {
+        setForm(updatedForm);
+      }
+    };
+
+    window.addEventListener(FORM_UPDATED_EVENT, handleFormUpdated);
+    return () => window.removeEventListener(FORM_UPDATED_EVENT, handleFormUpdated);
+  }, [formId]);
 
   // If the path is exactly "/forms/[id]/builder", render it full-screen without side navigation
   const isBuilderRoute = pathname.endsWith("/builder");
@@ -100,7 +97,7 @@ export default function FormDetailsLayout({
           </Link>
           <ChevronRight className="h-3 w-3" />
           <span className="text-foreground font-semibold truncate max-w-[200px]">
-            {form.title}
+            {form?.title ?? "Loading form…"}
           </span>
         </div>
 
@@ -108,19 +105,19 @@ export default function FormDetailsLayout({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-foreground truncate max-w-md sm:max-w-xl">
-              {form.title}
+              {form?.title ?? "Loading form…"}
             </h1>
             <Badge
               variant={
-                form.status === "published"
+                form?.status === "published"
                   ? "success"
-                  : form.status === "closed"
+                  : form?.status === "closed"
                   ? "destructive"
                   : "muted"
               }
               className="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5"
             >
-              {form.status}
+              {form?.status ?? "loading"}
             </Badge>
           </div>
 
