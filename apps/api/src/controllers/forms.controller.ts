@@ -5,8 +5,11 @@ import {
   duplicateFormForUser,
   BuilderValidationError,
   getBuilderForUser,
+  getFormAnalyticsForUser,
   getFormForUser,
+  getResponseForUser,
   listFormsForUser,
+  listResponsesForUser,
   saveBuilderForUser,
   updateFormForUser,
 } from "../services/forms.service.js";
@@ -83,6 +86,62 @@ export async function getForm(req: Request, res: Response) {
   if (!result) {
     return res.status(404).json({ error: "Form not found" });
   }
+
+  return res.status(200).json(result);
+}
+
+export async function getFormAnalytics(req: Request, res: Response) {
+  const userId = getUserId(req);
+
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const formId = getFormId(req);
+
+  if (!formId) {
+    return res.status(400).json({ error: "Invalid form id" });
+  }
+
+  const analytics = await getFormAnalyticsForUser({ userId, formId });
+
+  if (!analytics) {
+    return res.status(404).json({ error: "Form not found" });
+  }
+
+  return res.status(200).json(analytics);
+}
+
+export async function listResponses(req: Request, res: Response) {
+  const userId = getUserId(req);
+  const formId = getFormId(req);
+
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!formId) return res.status(400).json({ error: "Invalid form id" });
+
+  const result = await listResponsesForUser({ userId, formId });
+  if (!result) return res.status(404).json({ error: "Form not found" });
+
+  return res.status(200).json(result);
+}
+
+export async function getResponse(req: Request, res: Response) {
+  const userId = getUserId(req);
+  const formId = getFormId(req);
+  const { responseId } = req.params;
+  const normalizedResponseId = Array.isArray(responseId) ? responseId[0] : responseId;
+
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!formId || !normalizedResponseId) {
+    return res.status(400).json({ error: "Invalid response id" });
+  }
+
+  const result = await getResponseForUser({
+    userId,
+    formId,
+    responseId: normalizedResponseId,
+  });
+  if (!result) return res.status(404).json({ error: "Response not found" });
 
   return res.status(200).json(result);
 }

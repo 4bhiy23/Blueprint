@@ -8,6 +8,7 @@ export interface FormRecord {
   status: FormStatus;
   publicId: string;
   createdAt: string;
+  responseCount?: number;
 }
 
 export interface FormOption {
@@ -27,4 +28,36 @@ export interface FormQuestion {
 export interface FormDetails {
   form: FormRecord;
   questions: FormQuestion[];
+}
+
+export interface FormAnalytics {
+  form: Pick<FormRecord, "id" | "title">;
+  totalResponses: number;
+  averageCompletionMs: number | null;
+  responsesByDay: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
+export interface FormResponseSummary {
+  id: string;
+  submittedAt: string;
+  completionMs: number | null;
+}
+
+export interface FormResponses {
+  form: Pick<FormRecord, "id" | "title">;
+  responses: FormResponseSummary[];
+}
+
+export interface FormResponseDetails {
+  form: Pick<FormRecord, "id" | "title">;
+  response: FormResponseSummary & {
+    answers: Array<{
+      questionId: string;
+      question: string;
+      answer: string | null;
+    }>;
+  };
 }

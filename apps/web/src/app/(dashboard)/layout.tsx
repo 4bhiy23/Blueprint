@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  BarChart3,
   Settings,
   Bell,
   Search,
@@ -112,8 +111,6 @@ export default function DashboardLayout({
   // Global top-navigation links
   const navLinks = [
     { label: "Dashboard", href: "/", Icon: LayoutDashboard },
-    { label: "Analytics", href: "/analytics", Icon: BarChart3 },
-    { label: "Settings", href: "/settings", Icon: Settings },
   ];
 
   return (
@@ -177,22 +174,6 @@ export default function DashboardLayout({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Search Bar */}
-          <div className="relative hidden sm:block w-44 md:w-56 transition-all">
-            <Search
-              className={cn(
-                "absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 transition-colors",
-                searchFocused ? "text-primary" : "text-muted-foreground/50"
-              )}
-            />
-            <Input
-              placeholder="Search..."
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className="h-8 pl-8 pr-3 text-xs bg-muted/20 border-border/80 focus-visible:ring-1 focus-visible:ring-primary w-full"
-            />
-          </div>
 
           {/* Theme Toggle */}
           <Button

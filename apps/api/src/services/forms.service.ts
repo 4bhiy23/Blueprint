@@ -11,6 +11,7 @@ import {
   inArray,
   notInArray,
   responses,
+  sql,
 } from "@repo/db";
 import type { BuilderInput, SubmitAnswerInput } from "@repo/validators";
 import { QUESTION_OPTION_TYPES } from "@repo/validators";
@@ -188,10 +189,38 @@ export async function createFormForUser(input: {
 }
 
 export async function listFormsForUser(userId: string) {
-  return db.query.forms.findMany({
+  const userForms = await db.query.forms.findMany({
     where: (formsTable, { eq }) => eq(formsTable.ownerId, userId),
     orderBy: (formsTable, { desc }) => [desc(formsTable.createdAt)],
   });
+
+  const responseCounts = await getResponseCountsByFormId(
+    userForms.map((form) => form.id),
+  );
+
+  return userForms.map((form) => ({
+    ...form,
+    responseCount: responseCounts.get(form.id) ?? 0,
+  }));
+}
+
+async function getResponseCountsByFormId(formIds: string[]) {
+  if (formIds.length === 0) {
+    return new Map<string, number>();
+  }
+
+  const counts = await db
+    .select({
+      formId: responses.formId,
+      responseCount: sql<number>`count(*)`,
+    })
+    .from(responses)
+    .where(inArray(responses.formId, formIds))
+    .groupBy(responses.formId);
+
+  return new Map(
+    counts.map((count) => [count.formId, Number(count.responseCount)]),
+  );
 }
 
 export async function getFormForUser(input: {
@@ -210,6 +239,8 @@ export async function getFormForUser(input: {
     return null;
   }
 
+  const responseCounts = await getResponseCountsByFormId([form.id]);
+
   const formQuestions = await db.query.questions.findMany({
     where: (questionsTable, { eq }) => eq(questionsTable.formId, input.formId),
     orderBy: (questionsTable, { asc }) => [asc(questionsTable.orderIndex)],
@@ -226,10 +257,182 @@ export async function getFormForUser(input: {
     : [];
 
   return {
-    form,
+    form: {
+      ...form,
+      responseCount: responseCounts.get(form.id) ?? 0,
+    },
     questions: formQuestions.map((question) =>
       serializeFormQuestion(question, formOptions),
     ),
+  };
+}
+
+export async function getFormAnalyticsForUser(input: {
+  userId: string;
+  formId: string;
+}) {
+  const form = await db.query.forms.findFirst({
+    where: (formsTable, { and, eq }) =>
+      and(
+        eq(formsTable.id, input.formId),
+        eq(formsTable.ownerId, input.userId),
+      ),
+  });
+
+  if (!form) {
+    return null;
+  }
+
+  const formResponses = await db.query.responses.findMany({
+    where: (responsesTable, { eq }) => eq(responsesTable.formId, form.id),
+    orderBy: (responsesTable, { asc }) => [asc(responsesTable.submittedAt)],
+  });
+
+  const responsesByDate = new Map<string, number>();
+  let completionTotal = 0;
+  let completionCount = 0;
+
+  for (const response of formResponses) {
+    const date = response.submittedAt.toISOString().slice(0, 10);
+    responsesByDate.set(date, (responsesByDate.get(date) ?? 0) + 1);
+
+    if (response.completionMs !== null) {
+      completionTotal += response.completionMs;
+      completionCount += 1;
+    }
+  }
+
+  const today = new Date();
+  const responsesByDay = Array.from({ length: 14 }, (_, index) => {
+    const day = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate() - (13 - index),
+    ));
+    const date = day.toISOString().slice(0, 10);
+
+    return {
+      date,
+      count: responsesByDate.get(date) ?? 0,
+    };
+  });
+
+  return {
+    form: {
+      id: form.id,
+      title: form.title,
+    },
+    totalResponses: formResponses.length,
+    averageCompletionMs: completionCount
+      ? Math.round(completionTotal / completionCount)
+      : null,
+    responsesByDay,
+  };
+}
+
+export async function listResponsesForUser(input: {
+  userId: string;
+  formId: string;
+}) {
+  const form = await db.query.forms.findFirst({
+    where: (formsTable, { and, eq }) =>
+      and(
+        eq(formsTable.id, input.formId),
+        eq(formsTable.ownerId, input.userId),
+      ),
+  });
+
+  if (!form) return null;
+
+  const formResponses = await db.query.responses.findMany({
+    where: (responsesTable, { eq }) => eq(responsesTable.formId, form.id),
+    orderBy: (responsesTable, { desc }) => [desc(responsesTable.submittedAt)],
+  });
+
+  return {
+    form: { id: form.id, title: form.title },
+    responses: formResponses.map((response) => ({
+      id: response.id,
+      submittedAt: response.submittedAt,
+      completionMs: response.completionMs,
+    })),
+  };
+}
+
+export async function getResponseForUser(input: {
+  userId: string;
+  formId: string;
+  responseId: string;
+}) {
+  const form = await db.query.forms.findFirst({
+    where: (formsTable, { and, eq }) =>
+      and(
+        eq(formsTable.id, input.formId),
+        eq(formsTable.ownerId, input.userId),
+      ),
+  });
+
+  if (!form) return null;
+
+  const response = await db.query.responses.findFirst({
+    where: (responsesTable, { and, eq }) =>
+      and(
+        eq(responsesTable.id, input.responseId),
+        eq(responsesTable.formId, form.id),
+      ),
+  });
+
+  if (!response) return null;
+
+  const formQuestions = await db.query.questions.findMany({
+    where: (questionsTable, { eq }) => eq(questionsTable.formId, form.id),
+    orderBy: (questionsTable, { asc }) => [asc(questionsTable.orderIndex)],
+  });
+  const questionIds = formQuestions.map((question) => question.id);
+  const responseAnswers = await db.query.answers.findMany({
+    where: (answersTable, { eq }) => eq(answersTable.responseId, response.id),
+  });
+  const optionIds = responseAnswers
+    .map((answer) => answer.optionId)
+    .filter((optionId): optionId is string => optionId !== null);
+  const selectedOptions = optionIds.length
+    ? await db.query.questionOptions.findMany({
+        where: (optionsTable, { inArray }) =>
+          inArray(optionsTable.id, optionIds),
+      })
+    : [];
+  const optionsById = new Map(selectedOptions.map((option) => [option.id, option]));
+  const answersByQuestionId = new Map<string, (typeof responseAnswers)[number]>();
+  const optionLabelsByQuestionId = new Map<string, string[]>();
+
+  for (const answer of responseAnswers) {
+    if (answer.optionId) {
+      const option = optionsById.get(answer.optionId);
+      if (option) {
+        const labels = optionLabelsByQuestionId.get(answer.questionId) ?? [];
+        labels.push(option.label);
+        optionLabelsByQuestionId.set(answer.questionId, labels);
+      }
+    } else {
+      answersByQuestionId.set(answer.questionId, answer);
+    }
+  }
+
+  return {
+    form: { id: form.id, title: form.title },
+    response: {
+      id: response.id,
+      submittedAt: response.submittedAt,
+      completionMs: response.completionMs,
+      answers: formQuestions.map((question) => ({
+        questionId: question.id,
+        question: question.title,
+        answer:
+          optionLabelsByQuestionId.get(question.id)?.join(", ") ??
+          answersByQuestionId.get(question.id)?.value ??
+          null,
+      })),
+    },
   };
 }
 

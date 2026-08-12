@@ -7,6 +7,7 @@ import {
   Copy,
   Globe,
   ArrowRight,
+  FileText,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -58,11 +59,15 @@ export default function FormOverviewPage() {
           body: JSON.stringify({ status }),
         },
       );
+      const updatedForm = {
+        ...response.form,
+        responseCount: formDetails.form.responseCount,
+      };
       setFormDetails((current) =>
-        current ? { ...current, form: response.form } : current,
+        current ? { ...current, form: updatedForm } : current,
       );
       window.dispatchEvent(
-        new CustomEvent(FORM_UPDATED_EVENT, { detail: response.form }),
+        new CustomEvent(FORM_UPDATED_EVENT, { detail: updatedForm }),
       );
       toast.success(
         status === "published" ? "Form published" : "Form status updated",
@@ -210,8 +215,8 @@ export default function FormOverviewPage() {
               <span className="text-lg font-bold text-foreground mt-0.5 block">{questions.length}</span>
             </div>
             <div className="border border-border/50 bg-muted/10 rounded-lg p-3 text-center">
-              <span className="text-[10px] text-muted-foreground uppercase block font-medium">Submissions</span>
-              <span className="text-lg font-bold text-foreground mt-0.5 block">0</span>
+              <span className="text-[10px] text-muted-foreground uppercase block font-medium">Responses</span>
+              <span className="text-lg font-bold text-foreground mt-0.5 block">{form.responseCount ?? 0}</span>
             </div>
             <div className="border border-border/50 bg-muted/10 rounded-lg p-3 text-center col-span-2">
               <span className="text-[10px] text-muted-foreground uppercase block font-medium">Completion Rate</span>
@@ -222,9 +227,21 @@ export default function FormOverviewPage() {
 
         {/* Recent Responses */}
         <Card className="p-5 bg-card border border-border space-y-3.5">
-          <h3 className="font-semibold text-foreground text-sm">Recent Responses</h3>
-          <p className="text-xs text-muted-foreground italic">
-            Responses will appear here after response collection is implemented.
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-semibold text-foreground text-sm">Responses</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => router.push(`/forms/${form.id}/responses`)}
+            >
+              <FileText className="h-3.5 w-3.5" /> View all
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {form.responseCount === 1
+              ? "1 response received."
+              : `${form.responseCount ?? 0} responses received.`}
           </p>
         </Card>
       </div>

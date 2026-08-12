@@ -5,8 +5,11 @@ import {
   deleteForm,
   duplicateForm,
   getBuilder,
+  getFormAnalytics,
   getForm,
+  getResponse,
   listForms,
+  listResponses,
   saveBuilder,
   updateForm,
 } from "../controllers/forms.controller.js";
@@ -17,6 +20,9 @@ router.use(requireAuth);
 
 router.post("/", createForm);
 router.get("/", listForms);
+router.get("/:id/analytics", getFormAnalytics);
+router.get("/:id/responses", listResponses);
+router.get("/:id/responses/:responseId", getResponse);
 router.get("/:id", getForm);
 router.patch("/:id", updateForm);
 router.delete("/:id", deleteForm);

@@ -74,7 +74,12 @@ export default function FormDetailsLayout({
   const subLinks = [
     { label: "Overview", href: `/forms/${formId}`, Icon: LayoutDashboard, exact: true },
     { label: "Builder", href: `/forms/${formId}/builder`, Icon: Plus, exact: false },
-    { label: "Responses", href: `/forms/${formId}/responses`, Icon: FileText, exact: false },
+    {
+      label: `Responses (${form?.responseCount ?? 0})`,
+      href: `/forms/${formId}/responses`,
+      Icon: FileText,
+      exact: false,
+    },
     { label: "Analytics", href: `/forms/${formId}/analytics`, Icon: BarChart3, exact: false },
     { label: "Settings", href: `/forms/${formId}/settings`, Icon: Settings, exact: false },
   ];

@@ -71,7 +71,7 @@ function toFormCard(form: FormRecord): FormCardData {
     title: form.title,
     description: form.description ?? "",
     status: form.status,
-    responseCount: 0,
+    responseCount: form.responseCount ?? 0,
     createdAt: form.createdAt,
     createdLabel: formatRelativeDate(form.createdAt),
   };
@@ -168,7 +168,12 @@ export default function DashboardPage() {
       );
       setForms((currentForms) =>
         currentForms.map((form) =>
-          form.id === response.form.id ? toFormCard(response.form) : form,
+          form.id === response.form.id
+            ? toFormCard({
+                ...response.form,
+                responseCount: form.responseCount,
+              })
+            : form,
         ),
       );
       setRenameDialogOpen(false);
@@ -356,23 +361,6 @@ export default function DashboardPage() {
       ) : (
         /* Actual Forms list grid */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* New form dashed card (always first) */}
-          <button
-            onClick={handleNewForm}
-            className={cn(
-              "group flex flex-col items-center justify-center border border-dashed rounded-xl p-6 bg-muted/5 transition-all text-center min-h-[175px]",
-              "border-border hover:border-primary/50 hover:bg-primary/5"
-            )}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border group-hover:bg-primary/10 group-hover:border-primary/20 transition-all text-muted-foreground group-hover:text-primary mb-3">
-              <Plus className="h-4 w-4" />
-            </div>
-            <p className="text-sm font-semibold text-foreground">Create New Form</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 max-w-[180px]">
-              Drag and drop nodes on an infinite canvas.
-            </p>
-          </button>
-
           {/* Form items */}
           {sortedForms.map((form) => (
             <div

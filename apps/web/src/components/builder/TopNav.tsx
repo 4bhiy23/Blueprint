@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Eye, Globe, LayoutGrid, Pencil, Check, Loader2, CloudCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,14 +99,18 @@ export function TopNav({
       {/* ── Left: Logo + Title + Autosave Indicator ──────────────── */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Blueprint logo mark */}
-        <div className="flex items-center gap-2 shrink-0">
+        <Link
+          href="/"
+          aria-label="Go to dashboard"
+          className="flex items-center gap-2 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
             <LayoutGrid className="h-3.5 w-3.5 text-primary-foreground" />
           </div>
           <span className="text-sm font-semibold text-foreground hidden sm:block">
             Blueprint
           </span>
-        </div>
+        </Link>
 
         <Separator orientation="vertical" className="h-4" />
 

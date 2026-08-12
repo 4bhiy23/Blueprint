@@ -117,5 +117,14 @@ export const INITIAL_EDGES: BuilderEdge[] = [];
 
 // ─── ID generator ───────────────────────────────────────────────────────────
 export function generateId(): string {
-  return `node_${Math.random().toString(36).slice(2, 9)}_${Date.now()}`;
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  // Fallback for browsers that do not yet support `crypto.randomUUID`.
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+    const random = (Math.random() * 16) | 0;
+    const value = character === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
 }
