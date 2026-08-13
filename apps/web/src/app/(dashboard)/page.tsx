@@ -14,6 +14,10 @@ import {
   FolderLock,
   ArrowUpDown,
   Sparkles,
+  Globe,
+  Archive,
+  RotateCcw,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -142,6 +146,31 @@ export default function DashboardPage() {
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Unable to duplicate the form.",
+      );
+    }
+  };
+
+  const handleStatusChange = async (form: FormCardData, status: FormStatus) => {
+    try {
+      const response = await apiFetch<{ form: FormRecord }>(`/forms/${form.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+
+      setForms((currentForms) =>
+        currentForms.map((currentForm) =>
+          currentForm.id === form.id
+            ? toFormCard({
+                ...response.form,
+                responseCount: currentForm.responseCount,
+              })
+            : currentForm,
+        ),
+      );
+      toast.success(`Form ${status === "published" ? "published" : `moved to ${status}`}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to update the form status.",
       );
     }
   };
@@ -422,6 +451,52 @@ export default function DashboardPage() {
                           <Pencil className="h-3.5 w-3.5" />
                           Rename
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {form.status === "draft" && (
+                          <DropdownMenuItem
+                            className="gap-2 text-xs"
+                            onClick={() => void handleStatusChange(form, "published")}
+                          >
+                            <Globe className="h-3.5 w-3.5" />
+                            Publish
+                          </DropdownMenuItem>
+                        )}
+                        {form.status === "published" && (
+                          <DropdownMenuItem
+                            className="gap-2 text-xs"
+                            onClick={() => void handleStatusChange(form, "closed")}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Close responses
+                          </DropdownMenuItem>
+                        )}
+                        {form.status === "closed" && (
+                          <DropdownMenuItem
+                            className="gap-2 text-xs"
+                            onClick={() => void handleStatusChange(form, "published")}
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Reopen responses
+                          </DropdownMenuItem>
+                        )}
+                        {form.status !== "archived" && (
+                          <DropdownMenuItem
+                            className="gap-2 text-xs"
+                            onClick={() => void handleStatusChange(form, "archived")}
+                          >
+                            <Archive className="h-3.5 w-3.5" />
+                            Archive
+                          </DropdownMenuItem>
+                        )}
+                        {form.status === "archived" && (
+                          <DropdownMenuItem
+                            className="gap-2 text-xs"
+                            onClick={() => void handleStatusChange(form, "draft")}
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Restore as draft
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="gap-2 text-xs text-destructive focus:text-destructive"

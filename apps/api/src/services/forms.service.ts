@@ -69,6 +69,13 @@ export class SubmissionValidationError extends Error {
   }
 }
 
+export class FormEditingLockedError extends Error {
+  constructor() {
+    super("Published forms cannot be edited. Close the form before making changes.");
+    this.name = "FormEditingLockedError";
+  }
+}
+
 function validateBuilderGraph(builder: BuilderInput) {
   if (builder.nodes.length === 0) {
     if (builder.edges.length > 0) {
@@ -682,6 +689,13 @@ export async function updateFormForUser(input: {
     return null;
   }
 
+  if (
+    existingForm.status === "published" &&
+    (input.title !== undefined || input.description !== undefined)
+  ) {
+    throw new FormEditingLockedError();
+  }
+
   const [updatedForm] = await db
     .update(forms)
     .set({
@@ -891,6 +905,10 @@ export async function saveBuilderForUser(input: {
 
     if (!form) {
       return null;
+    }
+
+    if (form.status === "published") {
+      throw new FormEditingLockedError();
     }
 
     const incomingIds = input.builder.nodes.map((node) => node.id);

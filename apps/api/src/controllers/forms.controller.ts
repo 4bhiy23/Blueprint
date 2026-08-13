@@ -4,6 +4,7 @@ import {
   deleteFormForUser,
   duplicateFormForUser,
   BuilderValidationError,
+  FormEditingLockedError,
   getBuilderForUser,
   getFormAnalyticsForUser,
   getFormForUser,
@@ -168,13 +169,21 @@ export async function updateForm(req: Request, res: Response) {
     });
   }
 
-  const form = await updateFormForUser({
-    userId,
-    formId,
-    title: parsed.data.title,
-    description: parsed.data.description,
-    status: parsed.data.status,
-  });
+  let form;
+  try {
+    form = await updateFormForUser({
+      userId,
+      formId,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      status: parsed.data.status,
+    });
+  } catch (error) {
+    if (error instanceof FormEditingLockedError) {
+      return res.status(409).json({ error: error.message });
+    }
+    throw error;
+  }
 
   if (!form) {
     return res.status(404).json({ error: "Form not found" });
@@ -281,11 +290,19 @@ export async function saveBuilder(req: Request, res: Response) {
   }
 
   try {
-    const builder = await saveBuilderForUser({
+  let builder;
+  try {
+    builder = await saveBuilderForUser({
       userId,
       formId,
       builder: parsed.data,
     });
+  } catch (error) {
+    if (error instanceof FormEditingLockedError) {
+      return res.status(409).json({ error: error.message });
+    }
+    throw error;
+  }
 
     if (!builder) {
       return res.status(404).json({ error: "Form not found" });

@@ -20,6 +20,7 @@ interface TopNavProps {
   onStatusChange: (status: string) => void;
   saveStatus: "idle" | "saving" | "saved" | "error";
   onSaveStatusChange: (status: "idle" | "saving" | "saved" | "error") => void;
+  readOnly?: boolean;
 }
 
 export function TopNav({
@@ -31,6 +32,7 @@ export function TopNav({
   onStatusChange,
   saveStatus,
   onSaveStatusChange,
+  readOnly = false,
 }: TopNavProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(formTitle);
@@ -115,7 +117,7 @@ export function TopNav({
         <Separator orientation="vertical" className="h-4" />
 
         {/* Editable form title */}
-        {isEditingTitle ? (
+        {isEditingTitle && !readOnly ? (
           <div className="flex items-center gap-1.5">
             <Input
               autoFocus
@@ -138,6 +140,10 @@ export function TopNav({
               <Check className="h-3.5 w-3.5" />
             </button>
           </div>
+        ) : readOnly ? (
+          <span className="max-w-[140px] sm:max-w-[220px] truncate px-1.5 py-0.5 text-sm font-semibold text-foreground">
+            {formTitle}
+          </span>
         ) : (
           <button
             onClick={() => {
@@ -164,13 +170,18 @@ export function TopNav({
               <span className="text-[10px] font-medium text-primary">Saving...</span>
             </div>
           )}
-          {(saveStatus === "saved" || saveStatus === "idle") && (
+          {!readOnly && (saveStatus === "saved" || saveStatus === "idle") && (
             <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               <CloudCheck className="h-3.5 w-3.5 text-emerald-400" />
               <span className="text-[10px] font-medium text-emerald-400">Saved</span>
             </div>
           )}
-          {saveStatus === "error" && (
+          {readOnly ? (
+            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+              <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-[10px] font-medium text-amber-400">Editing locked</span>
+            </div>
+          ) : saveStatus === "error" && (
             <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
               <AlertCircle className="h-3.5 w-3.5 text-rose-400" />
               <span className="text-[10px] font-medium text-rose-400">Error saving</span>

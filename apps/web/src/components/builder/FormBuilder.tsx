@@ -118,6 +118,7 @@ function FormBuilderInner() {
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [draggedType, setDraggedType] = useState<QuestionType | null>(null);
+  const isReadOnly = form?.status === "published";
 
   const rfInstance = useReactFlow();
 
@@ -502,12 +503,22 @@ function FormBuilderInner() {
           onStatusChange={(status) => setForm((f) => (f ? { ...f, status } : f))}
           saveStatus={saveStatus}
           onSaveStatusChange={setSaveStatus}
+          readOnly={isReadOnly}
         />
 
         {/* Three-panel body */}
         <main className="flex flex-1 overflow-hidden">
           {/* Left sidebar */}
-          <ComponentLibrary />
+          {isReadOnly ? (
+            <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Published form</p>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Close responses to edit questions and settings.
+              </p>
+            </aside>
+          ) : (
+            <ComponentLibrary />
+          )}
 
           {/* Canvas */}
           <BuilderCanvas
@@ -517,18 +528,21 @@ function FormBuilderInner() {
             onEdgesChange={onEdgesChange}
             onNodeSelect={handleNodeSelect}
             onAddNode={handleAddNode}
+            readOnly={isReadOnly}
           />
 
           {/* Right sidebar */}
-          <PropertiesPanel
-            selectedNodeData={selectedNodeData}
-            formTitle={form.title}
-            formDescription={form.description || ""}
-            onFormTitleChange={handleFormTitleChange}
-            onFormDescriptionChange={handleFormDescriptionChange}
-            onQuestionDataChange={handleQuestionDataChange}
-            onOptionsReorder={handleOptionsReorder}
-          />
+          <div className={isReadOnly ? "pointer-events-none opacity-55" : undefined}>
+            <PropertiesPanel
+              selectedNodeData={selectedNodeData}
+              formTitle={form.title}
+              formDescription={form.description || ""}
+              onFormTitleChange={handleFormTitleChange}
+              onFormDescriptionChange={handleFormDescriptionChange}
+              onQuestionDataChange={handleQuestionDataChange}
+              onOptionsReorder={handleOptionsReorder}
+            />
+          </div>
         </main>
       </div>
 

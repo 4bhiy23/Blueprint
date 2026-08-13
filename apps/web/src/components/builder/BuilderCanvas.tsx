@@ -72,6 +72,7 @@ export interface BuilderCanvasProps {
   onEdgesChange: any;
   onNodeSelect: (nodeId: string | null, data: QuestionNodeData | null) => void;
   onAddNode: (node: BuilderNode) => void;
+  readOnly?: boolean;
 }
 
 export function BuilderCanvas({
@@ -80,6 +81,7 @@ export function BuilderCanvas({
   onNodesChange,
   onEdgesChange,
   onNodeSelect,
+  readOnly = false,
 }: BuilderCanvasProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: CANVAS_DROP_ZONE_ID,
@@ -116,7 +118,8 @@ export function BuilderCanvas({
       ref={setNodeRef}
       className={cn(
         "relative flex-1 transition-all duration-200",
-        isOver && "ring-2 ring-inset ring-primary/30"
+        isOver && "ring-2 ring-inset ring-primary/30",
+        readOnly && "pointer-events-none",
       )}
     >
       <ReactFlow
@@ -124,13 +127,15 @@ export function BuilderCanvas({
         edges={edges}
         onNodesChange={onNodesChange as ReturnType<typeof useNodesState<Node>>[2]}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onConnect={readOnly ? undefined : onConnect}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
-        deleteKeyCode={["Backspace", "Delete"]}
+        deleteKeyCode={readOnly ? null : ["Backspace", "Delete"]}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
         isValidConnection={(connection) => {
           if (
             connection.source === SUBMIT_NODE_ID ||
