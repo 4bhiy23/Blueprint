@@ -288,6 +288,40 @@ function QuestionSettingsPanel({
           </div>
         </>
       )}
+
+      {data.questionType === "rating" && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <Section title="Rating scale">
+              <Input
+                type="number"
+                min={1}
+                value={data.ratingMax}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  onDataChange({ ratingMax: Number.isInteger(value) && value >= 1 ? value : 1 });
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground">Ratings always start at 1.</p>
+            </Section>
+            <Section title="Low label (optional)">
+              <Input
+                value={data.ratingLowLabel}
+                onChange={(event) => onDataChange({ ratingLowLabel: event.target.value })}
+                placeholder="e.g. Not likely"
+              />
+            </Section>
+            <Section title="High label (optional)">
+              <Input
+                value={data.ratingHighLabel}
+                onChange={(event) => onDataChange({ ratingHighLabel: event.target.value })}
+                placeholder="e.g. Very likely"
+              />
+            </Section>
+          </div>
+        </>
+      )}
     </div>
   );
 }

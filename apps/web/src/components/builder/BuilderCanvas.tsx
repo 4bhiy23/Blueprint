@@ -119,7 +119,7 @@ export function BuilderCanvas({
       className={cn(
         "relative flex-1 transition-all duration-200",
         isOver && "ring-2 ring-inset ring-primary/30",
-        readOnly && "pointer-events-none",
+        readOnly && "[&_.react-flow__node]:pointer-events-none",
       )}
     >
       <ReactFlow
@@ -136,6 +136,9 @@ export function BuilderCanvas({
         deleteKeyCode={readOnly ? null : ["Backspace", "Delete"]}
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
+        nodesFocusable={!readOnly}
+        elementsSelectable={!readOnly}
+        panOnDrag
         isValidConnection={(connection) => {
           if (
             connection.source === SUBMIT_NODE_ID ||

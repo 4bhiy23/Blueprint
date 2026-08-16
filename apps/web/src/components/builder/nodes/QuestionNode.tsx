@@ -35,9 +35,11 @@ import {
 function InputPreview({
   questionType,
   options,
+  ratingMax,
 }: {
   questionType: QuestionNodeData["questionType"];
   options: QuestionNodeData["options"];
+  ratingMax: number;
 }) {
   const hasOptions = (QUESTION_OPTION_TYPES as readonly string[]).includes(
     questionType
@@ -65,6 +67,19 @@ function InputPreview({
             +{options.length - 2} more
           </span>
         )}
+      </div>
+    );
+  }
+
+  if (questionType === "rating") {
+    return (
+      <div className="mt-2 flex gap-1">
+        {Array.from({ length: Math.min(ratingMax, 10) }, (_, index) => (
+          <span key={index} className="flex h-5 w-5 items-center justify-center rounded border border-border text-[10px] text-muted-foreground">
+            {index + 1}
+          </span>
+        ))}
+        {ratingMax > 10 && <span className="text-xs text-muted-foreground">…</span>}
       </div>
     );
   }
@@ -132,10 +147,10 @@ export const QuestionNode = memo(function QuestionNode({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Left handle */}
+      {/* Top handle */}
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
         className={cn(
           "!border-border !bg-muted transition-all",
           (selected || isHovered) && "!border-primary/60 !bg-primary/30"
@@ -213,7 +228,7 @@ export const QuestionNode = memo(function QuestionNode({
         >
           {data.title?.trim() || "Untitled question"}
         </p>
-        <InputPreview questionType={data.questionType} options={data.options} />
+        <InputPreview questionType={data.questionType} options={data.options} ratingMax={data.ratingMax} />
       </div>
 
       {/* ── Footer ─────────────────────────────── */}
@@ -225,10 +240,10 @@ export const QuestionNode = memo(function QuestionNode({
         </div>
       )}
 
-      {/* Right handle */}
+      {/* Bottom handle */}
       <Handle
         type="source"
-        position={Position.Right}
+        position={Position.Bottom}
         className={cn(
           "!border-border !bg-muted transition-all",
           (selected || isHovered) && "!border-primary/60 !bg-primary/30"

@@ -20,9 +20,12 @@ export interface FormQuestion {
   id: string;
   title: string;
   description: string | null;
-  type: "text" | "number" | "email" | "select" | "radio" | "checkbox";
+  type: "text" | "number" | "email" | "select" | "radio" | "checkbox" | "paragraph" | "date" | "datetime" | "time" | "rating";
   required: boolean;
   options: FormOption[];
+  ratingMax: number;
+  ratingLowLabel: string;
+  ratingHighLabel: string;
 }
 
 export interface FormDetails {

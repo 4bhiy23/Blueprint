@@ -7,6 +7,11 @@ export const QUESTION_TYPES = [
   "select",
   "radio",
   "checkbox",
+  "paragraph",
+  "date",
+  "datetime",
+  "time",
+  "rating",
 ] as const;
 
 export const QUESTION_OPTION_TYPES = ["select", "radio", "checkbox"] as const;
@@ -71,6 +76,9 @@ export const BuilderNodeSchema = z
         description: z.string().trim().max(2000).default(""),
         required: z.boolean().default(false),
         options: z.array(BuilderOptionSchema).default([]),
+        ratingMax: z.number().int().min(1).default(5),
+        ratingLowLabel: z.string().trim().max(255).default(""),
+        ratingHighLabel: z.string().trim().max(255).default(""),
       })
       .strict(),
   })

@@ -18,18 +18,26 @@ export async function apiFetch<T>(
     throw new Error("NEXT_PUBLIC_API_URL is not configured.");
   }
 
-  const response = await fetch(`${apiBaseUrl}/api/v2${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...init.headers,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}/api/v2${path}`, {
+      ...init,
+      credentials: "include",
+      headers: {
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...init.headers,
+      },
+    });
+  } catch {
+    throw new Error("Unable to reach the API. Make sure the API server is running.");
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new ApiError(body?.error ?? "Request failed.", response.status);
+    throw new ApiError(
+      body?.error ?? body?.message ?? "Request failed.",
+      response.status,
+    );
   }
 
   return response.status === 204

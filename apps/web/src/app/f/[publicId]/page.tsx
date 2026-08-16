@@ -8,6 +8,7 @@ import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -27,9 +28,12 @@ interface PublicQuestion {
   id: string;
   title: string;
   description: string | null;
-  type: "text" | "number" | "email" | "select" | "radio" | "checkbox";
+  type: "text" | "number" | "email" | "select" | "radio" | "checkbox" | "paragraph" | "date" | "datetime" | "time" | "rating";
   required: boolean;
   options: PublicQuestionOption[];
+  ratingMax: number;
+  ratingLowLabel: string;
+  ratingHighLabel: string;
 }
 
 interface PublicFormResponse {
@@ -153,6 +157,14 @@ export default function PublicFormResponderPage() {
       if (currentQuestion.type === "number") {
         if (isNaN(Number(value))) {
           setValidationError("Please enter a valid number.");
+          return false;
+        }
+      }
+
+      if (currentQuestion.type === "rating") {
+        const rating = Number(value);
+        if (!Number.isInteger(rating) || rating < 1 || rating > currentQuestion.ratingMax) {
+          setValidationError(`Choose a rating from 1 to ${currentQuestion.ratingMax}.`);
           return false;
         }
       }
@@ -349,6 +361,40 @@ export default function PublicFormResponderPage() {
                   value={currentAnswer.value}
                   onChange={(e) => updateAnswer(e.target.value, [])}
                 />
+              )}
+
+              {currentQuestion.type === "paragraph" && (
+                <Textarea
+                  placeholder="Type your answer here..."
+                  className="min-h-32 bg-slate-950/80 border-slate-800 focus-visible:ring-primary rounded-xl text-slate-200"
+                  value={currentAnswer.value}
+                  onChange={(e) => updateAnswer(e.target.value, [])}
+                />
+              )}
+
+              {currentQuestion.type === "date" && (
+                <Input type="date" className="bg-slate-950/80 border-slate-800 focus-visible:ring-primary h-12 rounded-xl text-slate-200" value={currentAnswer.value} onChange={(e) => updateAnswer(e.target.value, [])} />
+              )}
+
+              {currentQuestion.type === "datetime" && (
+                <Input type="datetime-local" className="bg-slate-950/80 border-slate-800 focus-visible:ring-primary h-12 rounded-xl text-slate-200" value={currentAnswer.value} onChange={(e) => updateAnswer(e.target.value, [])} />
+              )}
+
+              {currentQuestion.type === "time" && (
+                <Input type="time" className="bg-slate-950/80 border-slate-800 focus-visible:ring-primary h-12 rounded-xl text-slate-200" value={currentAnswer.value} onChange={(e) => updateAnswer(e.target.value, [])} />
+              )}
+
+              {currentQuestion.type === "rating" && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={currentQuestion.title}>
+                    {Array.from({ length: currentQuestion.ratingMax }, (_, index) => {
+                      const rating = String(index + 1);
+                      const selected = currentAnswer.value === rating;
+                      return <button key={rating} type="button" role="radio" aria-checked={selected} onClick={() => updateAnswer(rating, [])} className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${selected ? "border-primary bg-primary text-primary-foreground" : "border-slate-800 bg-slate-950/80 text-slate-300 hover:border-primary/60"}`}>{rating}</button>;
+                    })}
+                  </div>
+                  {(currentQuestion.ratingLowLabel || currentQuestion.ratingHighLabel) && <div className="flex justify-between gap-4 text-xs text-slate-400"><span>{currentQuestion.ratingLowLabel}</span><span className="text-right">{currentQuestion.ratingHighLabel}</span></div>}
+                </div>
               )}
 
               {currentQuestion.type === "select" && (

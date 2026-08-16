@@ -26,7 +26,7 @@ export const StartNode = memo(function StartNode({
 
       <Handle
         type="source"
-        position={Position.Right}
+        position={Position.Bottom}
         className="!border-emerald-500/60 !bg-emerald-500/30 hover:!bg-emerald-400"
       />
     </div>

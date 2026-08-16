@@ -20,7 +20,7 @@ export const SubmitNode = memo(function SubmitNode({
     >
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
         className="!border-blue-500/60 !bg-blue-500/30 hover:!bg-blue-400"
       />
       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20">

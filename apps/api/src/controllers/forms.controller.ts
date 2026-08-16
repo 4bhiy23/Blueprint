@@ -289,7 +289,6 @@ export async function saveBuilder(req: Request, res: Response) {
     });
   }
 
-  try {
   let builder;
   try {
     builder = await saveBuilderForUser({
@@ -301,15 +300,6 @@ export async function saveBuilder(req: Request, res: Response) {
     if (error instanceof FormEditingLockedError) {
       return res.status(409).json({ error: error.message });
     }
-    throw error;
-  }
-
-    if (!builder) {
-      return res.status(404).json({ error: "Form not found" });
-    }
-
-    return res.status(200).json(builder);
-  } catch (error) {
     if (error instanceof BuilderValidationError) {
       return res.status(400).json({
         error: "Invalid builder graph",
@@ -319,4 +309,10 @@ export async function saveBuilder(req: Request, res: Response) {
 
     throw error;
   }
+
+  if (!builder) {
+    return res.status(404).json({ error: "Form not found" });
+  }
+
+  return res.status(200).json(builder);
 }

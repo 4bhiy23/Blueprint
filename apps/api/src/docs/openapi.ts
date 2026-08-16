@@ -16,7 +16,7 @@
  *       enum: [draft, published, closed, archived]
  *     QuestionType:
  *       type: string
- *       enum: [text, number, email, select, radio, checkbox]
+ *       enum: [text, number, email, select, radio, checkbox, paragraph, date, datetime, time, rating]
  *     Form:
  *       type: object
  *       required: [id, ownerId, title, status, publicId, createdAt]
@@ -87,6 +87,19 @@
  *           type: number
  *         positionY:
  *           type: number
+ *         ratingMax:
+ *           type: integer
+ *           minimum: 1
+ *           nullable: true
+ *           description: Maximum selectable value for rating questions; ratings always start at 1.
+ *         ratingLowLabel:
+ *           type: string
+ *           nullable: true
+ *           description: Optional label shown at the low end of a rating question.
+ *         ratingHighLabel:
+ *           type: string
+ *           nullable: true
+ *           description: Optional label shown at the high end of a rating question.
  *         options:
  *           type: array
  *           items:
@@ -134,6 +147,17 @@
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/PublicQuestionOption'
+ *         ratingMax:
+ *           type: integer
+ *           minimum: 1
+ *           default: 5
+ *           description: Present for all questions; used only when type is rating.
+ *         ratingLowLabel:
+ *           type: string
+ *           default: ''
+ *         ratingHighLabel:
+ *           type: string
+ *           default: ''
  *     BuilderPosition:
  *       type: object
  *       required: [x, y]
@@ -168,6 +192,19 @@
  *           default: []
  *           items:
  *             $ref: '#/components/schemas/BuilderOption'
+ *         ratingMax:
+ *           type: integer
+ *           minimum: 1
+ *           default: 5
+ *           description: Used only when type is rating; the scale is always 1 through ratingMax.
+ *         ratingLowLabel:
+ *           type: string
+ *           maxLength: 255
+ *           default: ''
+ *         ratingHighLabel:
+ *           type: string
+ *           maxLength: 255
+ *           default: ''
  *       additionalProperties: false
  *     BuilderNode:
  *       type: object

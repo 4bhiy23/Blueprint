@@ -5,7 +5,17 @@ import { GripVertical } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { QUESTION_TYPES, QUESTION_TYPE_META, type QuestionType } from "./types";
+import { QUESTION_TYPE_META, type QuestionType } from "./types";
+
+const QUESTION_TYPE_CATEGORIES: Array<{
+  label: string;
+  types: QuestionType[];
+}> = [
+  { label: "Text", types: ["text", "paragraph", "number", "email"] },
+  { label: "Choices", types: ["select", "radio", "checkbox"] },
+  { label: "Date & time", types: ["date", "datetime", "time"] },
+  { label: "Feedback", types: ["rating"] },
+];
 
 /* ─── Single draggable component card ──────────────────────────────────── */
 function ComponentCard({ questionType }: { questionType: QuestionType }) {
@@ -72,9 +82,16 @@ export function ComponentLibrary() {
 
       {/* Question type cards */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1.5 p-3">
-          {QUESTION_TYPES.map((type) => (
-            <ComponentCard key={type} questionType={type} />
+        <div className="space-y-5 p-3">
+          {QUESTION_TYPE_CATEGORIES.map((category) => (
+            <section key={category.label} className="space-y-1.5">
+              <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {category.label}
+              </h3>
+              {category.types.map((type) => (
+                <ComponentCard key={type} questionType={type} />
+              ))}
+            </section>
           ))}
         </div>
         {/* Bottom padding for scroll area */}

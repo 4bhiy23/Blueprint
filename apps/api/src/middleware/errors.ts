@@ -5,6 +5,6 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
   logger.error(err);
 
   res.status(500).json({
-    message: "Internal server error",
+    error: "Internal server error",
   });
 }

@@ -40,6 +40,12 @@ export const questions = pgTable("questions", {
   positionX: doublePrecision("position_x").notNull().default(0),
 
   positionY: doublePrecision("position_y").notNull().default(0),
+
+  ratingMax: integer("rating_max"),
+
+  ratingLowLabel: text("rating_low_label"),
+
+  ratingHighLabel: text("rating_high_label"),
 }, (table) => [
   index("questions_form_id_idx").on(table.formId),
 ]);

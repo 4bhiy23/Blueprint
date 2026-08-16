@@ -14,4 +14,9 @@ export const questionTypeEnum = pgEnum("question_type", [
   "select",
   "radio",
   "checkbox",
+  "paragraph",
+  "date",
+  "datetime",
+  "time",
+  "rating",
 ]);

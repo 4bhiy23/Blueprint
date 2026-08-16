@@ -51,6 +51,9 @@ function serializeBuilderQuestion(
         .filter((option) => option.questionId === question.id)
         .sort((left, right) => left.orderIndex - right.orderIndex)
         .map((option) => ({ id: option.id, label: option.label })),
+      ratingMax: question.ratingMax ?? 5,
+      ratingLowLabel: question.ratingLowLabel ?? "",
+      ratingHighLabel: question.ratingHighLabel ?? "",
     },
   };
 }
@@ -74,6 +77,37 @@ export class FormEditingLockedError extends Error {
     super("Published forms cannot be edited. Close the form before making changes.");
     this.name = "FormEditingLockedError";
   }
+}
+
+function isValidDateValue(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+
+  const [, year, month, day] = match;
+  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+
+  return (
+    parsed.getUTCFullYear() === Number(year) &&
+    parsed.getUTCMonth() === Number(month) - 1 &&
+    parsed.getUTCDate() === Number(day)
+  );
+}
+
+function isValidTimeValue(value: string) {
+  const match = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value);
+  if (!match) return false;
+
+  const [, hours, minutes, seconds] = match;
+  return (
+    Number(hours) <= 23 &&
+    Number(minutes) <= 59 &&
+    (seconds === undefined || Number(seconds) <= 59)
+  );
+}
+
+function isValidDateTimeValue(value: string) {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(?::\d{2})?)$/.exec(value);
+  return match !== null && isValidDateValue(match[1]) && isValidTimeValue(match[2]);
 }
 
 function validateBuilderGraph(builder: BuilderInput) {
@@ -116,6 +150,10 @@ function validateBuilderGraph(builder: BuilderInput) {
       }
 
       optionIds.add(option.id);
+    }
+
+    if (node.type === "rating" && node.data.ratingMax < 1) {
+      throw new BuilderValidationError("Rating questions must have a maximum of at least 1.");
     }
   }
 
@@ -487,6 +525,9 @@ export async function getPublicFormForResponder(publicId: string) {
           label: option.label,
         }),
       ),
+      ratingMax: question.ratingMax ?? 5,
+      ratingLowLabel: question.ratingLowLabel ?? "",
+      ratingHighLabel: question.ratingHighLabel ?? "",
     })),
   };
 }
@@ -607,12 +648,43 @@ export async function submitResponseForPublicForm(input: {
       );
     }
 
+    if (question.type === "rating") {
+      const rating = Number(value);
+      const ratingMax = question.ratingMax ?? 5;
+      if (!Number.isInteger(rating) || rating < 1 || rating > ratingMax) {
+        throw new SubmissionValidationError(
+          `Question "${question.title}" requires a rating from 1 to ${ratingMax}.`,
+        );
+      }
+    }
+
     if (
       question.type === "email" &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
     ) {
       throw new SubmissionValidationError(
         `Question "${question.title}" must be a valid email.`,
+      );
+    }
+
+    if (question.type === "date" && !isValidDateValue(value)) {
+      throw new SubmissionValidationError(
+        `Question "${question.title}" must be a valid date.`,
+      );
+    }
+
+    if (question.type === "time" && !isValidTimeValue(value)) {
+      throw new SubmissionValidationError(
+        `Question "${question.title}" must be a valid time.`,
+      );
+    }
+
+    if (
+      question.type === "datetime" &&
+      !isValidDateTimeValue(value)
+    ) {
+      throw new SubmissionValidationError(
+        `Question "${question.title}" must be a valid date and time.`,
       );
     }
 
@@ -987,6 +1059,11 @@ export async function saveBuilderForUser(input: {
           orderIndex: orderIndexByQuestionId.get(node.id) ?? 0,
           positionX: node.position.x,
           positionY: node.position.y,
+          ratingMax: node.type === "rating" ? node.data.ratingMax : null,
+          ratingLowLabel:
+            node.type === "rating" ? node.data.ratingLowLabel || null : null,
+          ratingHighLabel:
+            node.type === "rating" ? node.data.ratingHighLabel || null : null,
         })
         .onConflictDoUpdate({
           target: questions.id,
@@ -998,6 +1075,11 @@ export async function saveBuilderForUser(input: {
             orderIndex: orderIndexByQuestionId.get(node.id) ?? 0,
             positionX: node.position.x,
             positionY: node.position.y,
+            ratingMax: node.type === "rating" ? node.data.ratingMax : null,
+            ratingLowLabel:
+              node.type === "rating" ? node.data.ratingLowLabel || null : null,
+            ratingHighLabel:
+              node.type === "rating" ? node.data.ratingHighLabel || null : null,
           },
       });
     }

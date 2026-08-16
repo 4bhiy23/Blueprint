@@ -34,8 +34,6 @@ import {
   type QuestionOption,
   type QuestionFlowNode,
   QUESTION_TYPE_META,
-  INITIAL_NODES,
-  INITIAL_EDGES,
   CANVAS_DROP_ZONE_ID,
   START_NODE_ID,
   SUBMIT_NODE_ID,
@@ -62,6 +60,9 @@ interface BackendBuilderNode {
     description: string;
     required: boolean;
     options: QuestionOption[];
+    ratingMax: number;
+    ratingLowLabel: string;
+    ratingHighLabel: string;
   };
 }
 
@@ -160,15 +161,31 @@ function FormBuilderInner() {
             description: n.data.description,
             required: n.data.required,
             options: n.data.options,
+            ratingMax: n.data.ratingMax ?? 5,
+            ratingLowLabel: n.data.ratingLowLabel ?? "",
+            ratingHighLabel: n.data.ratingHighLabel ?? "",
           },
         }));
+
+        const incomingMap = new Set(backendEdges.map((edge) => edge.target));
+        const outgoingMap = new Set(backendEdges.map((edge) => edge.source));
+        const firstQuestionNode = backendNodes.find((node) => !incomingMap.has(node.id));
+        const lastQuestionNode = backendNodes.find((node) => !outgoingMap.has(node.id));
+
+        // Position virtual nodes above and below the form's linear flow.
+        const startPosition = firstQuestionNode
+          ? { x: firstQuestionNode.position.x + 64, y: firstQuestionNode.position.y - 110 }
+          : { x: 320, y: 80 };
+        const submitPosition = lastQuestionNode
+          ? { x: lastQuestionNode.position.x + 64, y: lastQuestionNode.position.y + 180 }
+          : { x: 320, y: 520 };
 
         // Add virtual start/submit nodes
         const finalNodes: BuilderNode[] = [
           {
             id: START_NODE_ID,
             type: "start",
-            position: { x: 80, y: 220 },
+            position: startPosition,
             data: { label: "Start" },
             deletable: false,
             draggable: true,
@@ -177,7 +194,7 @@ function FormBuilderInner() {
           {
             id: SUBMIT_NODE_ID,
             type: "submit",
-            position: { x: 560, y: 220 },
+            position: submitPosition,
             data: { label: "Submit" },
             deletable: false,
             draggable: true,
@@ -192,9 +209,7 @@ function FormBuilderInner() {
           type: "deletable",
         }));
 
-        // Find the start question node (question node with no incoming edges)
-        const incomingMap = new Set(backendEdges.map((e) => e.target));
-        const firstQuestionNode = backendNodes.find((n) => !incomingMap.has(n.id));
+        // Link virtual start/submit nodes to the linear flow.
         if (firstQuestionNode) {
           finalEdges.push({
             id: `edge_start_to_${firstQuestionNode.id}`,
@@ -204,9 +219,6 @@ function FormBuilderInner() {
           });
         }
 
-        // Find the last question node (question node with no outgoing edges)
-        const outgoingMap = new Set(backendEdges.map((e) => e.source));
-        const lastQuestionNode = backendNodes.find((n) => !outgoingMap.has(n.id));
         if (lastQuestionNode) {
           finalEdges.push({
             id: `edge_${lastQuestionNode.id}_to_submit`,
@@ -242,6 +254,9 @@ function FormBuilderInner() {
         description: n.data.description || "",
         required: !!n.data.required,
         options: n.data.options || [],
+        ratingMax: n.data.ratingMax ?? 5,
+        ratingLowLabel: n.data.ratingLowLabel ?? "",
+        ratingHighLabel: n.data.ratingHighLabel ?? "",
       },
     }));
 
@@ -264,6 +279,8 @@ function FormBuilderInner() {
   // 2. Debounced API Autosave Graph
   const debouncedSaveGraph = useDebouncedCallback(
     async (currentNodes: BuilderNode[], currentEdges: any[]) => {
+      if (isReadOnly) return;
+
       try {
         const payload = serializeToBackend(currentNodes, currentEdges);
         await apiFetch(`/forms/${formId}/builder`, {
@@ -292,10 +309,12 @@ function FormBuilderInner() {
 
     setSaveStatus("saving");
     debouncedSaveGraph(nodes, edges);
-  }, [nodes, edges, isLoaded, debouncedSaveGraph]);
+  }, [nodes, edges, isLoaded, isReadOnly, debouncedSaveGraph]);
 
   // 3. Debounced API Rename Form
   const debouncedRenameForm = useDebouncedCallback(async (newTitle: string) => {
+    if (isReadOnly) return;
+
     try {
       await apiFetch(`/forms/${formId}`, {
         method: "PATCH",
@@ -310,14 +329,14 @@ function FormBuilderInner() {
   }, 1000);
 
   const handleFormTitleChange = (newTitle: string) => {
-    if (!form) return;
+    if (!form || isReadOnly) return;
     setSaveStatus("saving");
     setForm((f) => (f ? { ...f, title: newTitle } : f));
     debouncedRenameForm(newTitle);
   };
 
   const handleFormDescriptionChange = async (newDescription: string) => {
-    if (!form) return;
+    if (!form || isReadOnly) return;
     setSaveStatus("saving");
     setForm((f) => (f ? { ...f, description: newDescription } : f));
 
@@ -372,6 +391,9 @@ function FormBuilderInner() {
             description: "",
             required: false,
             options: [],
+            ratingMax: 5,
+            ratingLowLabel: "",
+            ratingHighLabel: "",
           } satisfies QuestionNodeData,
         } as BuilderNode;
 

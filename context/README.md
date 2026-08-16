@@ -7,6 +7,7 @@ Read these files before making changes to Blueprint.
 3. [Current state](CURRENT_STATE.md) - implemented work, known gaps, and active integration state.
 4. [Roadmap](ROADMAP.md) - the recommended order for the remaining MVP work.
 5. [Conventions](CONVENTIONS.md) - code, validation, and change guidelines.
+6. [Question types and API contract](QUESTION_TYPES.md) - supported inputs, rating configuration, persistence, and submission validation.
 
 ## Source of truth
 

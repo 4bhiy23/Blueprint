@@ -7,6 +7,10 @@ import {
   List,
   Circle,
   CheckSquare,
+  CalendarDays,
+  Clock3,
+  Star,
+  AlignLeft,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +32,9 @@ export interface QuestionNodeData extends Record<string, unknown> {
   description: string;
   required: boolean;
   options: QuestionOption[];
+  ratingMax: number;
+  ratingLowLabel: string;
+  ratingHighLabel: string;
 }
 
 export interface FixedNodeData extends Record<string, unknown> {
@@ -86,6 +93,36 @@ export const QUESTION_TYPE_META: Record<QuestionType, QuestionTypeMeta> = {
     Icon: CheckSquare,
     inputPreview: "Option A ✓  Option B",
   },
+  paragraph: {
+    label: "Paragraph",
+    description: "Multi-line text response",
+    Icon: AlignLeft,
+    inputPreview: "Write a longer answer...",
+  },
+  date: {
+    label: "Date",
+    description: "Calendar date picker",
+    Icon: CalendarDays,
+    inputPreview: "Select a date",
+  },
+  datetime: {
+    label: "Date & Time",
+    description: "Date and time picker",
+    Icon: CalendarDays,
+    inputPreview: "Select date and time",
+  },
+  time: {
+    label: "Time",
+    description: "Time picker",
+    Icon: Clock3,
+    inputPreview: "Select a time",
+  },
+  rating: {
+    label: "Rating",
+    description: "Scale from 1 to a chosen maximum",
+    Icon: Star,
+    inputPreview: "1  2  3  4  5",
+  },
 };
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -98,7 +135,7 @@ export const INITIAL_NODES: BuilderNode[] = [
   {
     id: START_NODE_ID,
     type: "start",
-    position: { x: 80, y: 220 },
+    position: { x: 320, y: 80 },
     data: { label: "Start" },
     deletable: false,
     draggable: true,
@@ -106,7 +143,7 @@ export const INITIAL_NODES: BuilderNode[] = [
   {
     id: SUBMIT_NODE_ID,
     type: "submit",
-    position: { x: 560, y: 220 },
+    position: { x: 320, y: 520 },
     data: { label: "Submit" },
     deletable: false,
     draggable: true,
