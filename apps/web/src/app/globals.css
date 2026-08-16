@@ -1,36 +1,64 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   Blueprint Design System — Dark-first semantic tokens
+   Blueprint Design System — Catppuccin Mocha Theme Tokens
    ───────────────────────────────────────────────────────────── */
 :root {
-  --background: 222 47% 4%;
-  --foreground: 210 36% 92%;
+  /* Base: #1e1e2e (240 21% 15%) */
+  --background: 240 21% 15%;
+  /* Text / Subtext0: #cdd6f4 (226 64% 88%) */
+  --foreground: 226 64% 88%;
 
-  --card: 222 40% 7%;
-  --card-foreground: 210 36% 92%;
+  /* Mantle: #181825 (240 23% 12%) */
+  --card: 240 23% 12%;
+  --card-foreground: 226 64% 88%;
 
-  --popover: 222 38% 8%;
-  --popover-foreground: 210 36% 92%;
+  /* Crust: #11111b (240 23% 9%) */
+  --popover: 240 23% 9%;
+  --popover-foreground: 226 64% 88%;
 
-  --primary: 239 84% 67%;
-  --primary-foreground: 222 47% 11%;
+  /* Mauve: #cba6f7 (267 84% 81%) */
+  --primary: 267 84% 81%;
+  --primary-foreground: 240 23% 9%;
 
-  --secondary: 222 30% 11%;
-  --secondary-foreground: 210 36% 92%;
+  /* Surface0: #313244 (237 16% 23%) */
+  --secondary: 237 16% 23%;
+  --secondary-foreground: 226 64% 88%;
 
-  --muted: 222 26% 14%;
-  --muted-foreground: 215 16% 47%;
+  /* Surface1: #45475a (235 13% 31%) */
+  --muted: 235 13% 31%;
+  /* Subtext1: #bac2de (227 35% 80%) */
+  --muted-foreground: 227 35% 80%;
 
-  --accent: 222 30% 12%;
-  --accent-foreground: 210 36% 92%;
+  /* Surface2: #585b70 (237 11% 39%) */
+  --accent: 237 11% 39%;
+  --accent-foreground: 226 64% 88%;
 
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 210 40% 98%;
+  /* Red: #f38ba8 (343 81% 75%) */
+  --destructive: 343 81% 75%;
+  --destructive-foreground: 240 23% 9%;
 
-  --border: 222 25% 13%;
-  --input: 222 25% 13%;
-  --ring: 239 84% 67%;
+  /* Overlay0: #6c7086 (233 11% 48%) */
+  --border: 233 11% 48%;
+  --input: 235 13% 31%;
+  /* Sapphire: #74c7ec (199 76% 69%) */
+  --ring: 199 76% 69%;
+
+  /* Catppuccin Specific Flavor Accents */
+  --mocha-rosewater: 10 56% 91%;  /* #f5e0dc */
+  --mocha-flamingo: 0 60% 88%;   /* #f2cdcd */
+  --mocha-pink: 316 73% 84%;     /* #f5c2e7 */
+  --mocha-mauve: 267 84% 81%;    /* #cba6f7 */
+  --mocha-red: 343 81% 75%;      /* #f38ba8 */
+  --mocha-maroon: 350 65% 77%;   /* #eba0ac */
+  --mocha-peach: 23 92% 76%;     /* #fab387 */
+  --mocha-yellow: 41 86% 83%;    /* #f9e2af */
+  --mocha-green: 115 54% 76%;    /* #a6e3a1 */
+  --mocha-teal: 170 57% 73%;     /* #94e2d5 */
+  --mocha-sky: 189 71% 73%;      /* #89dceb */
+  --mocha-sapphire: 199 76% 69%; /* #74c7ec */
+  --mocha-blue: 217 92% 76%;     /* #89b4fa */
+  --mocha-lavender: 245 66% 82%; /* #b4befe */
 
   --radius: 0.5rem;
 }

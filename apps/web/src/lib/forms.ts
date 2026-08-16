@@ -49,6 +49,10 @@ export interface FormResponseSummary {
   id: string;
   submittedAt: string;
   completionMs: number | null;
+  answers?: Array<{
+    questionId: string;
+    answer: string;
+  }>;
 }
 
 export interface FormResponses {
@@ -58,7 +62,10 @@ export interface FormResponses {
 
 export interface FormResponseDetails {
   form: Pick<FormRecord, "id" | "title">;
-  response: FormResponseSummary & {
+  response: {
+    id: string;
+    submittedAt: string;
+    completionMs: number | null;
     answers: Array<{
       questionId: string;
       question: string;

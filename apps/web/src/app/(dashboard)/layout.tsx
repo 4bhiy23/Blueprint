@@ -118,15 +118,15 @@ export default function DashboardLayout({
       {/* ─────────────────────────────────────────────────────────────
          GLOBAL TOP NAVIGATION BAR
          ───────────────────────────────────────────────────────────── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/45 px-4 md:px-6 backdrop-blur-md z-30">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-[hsl(var(--card))] px-4 md:px-6 z-30">
         {/* Left: Brand Logo & Links */}
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary">
-              <LayoutGrid className="h-4 w-4 text-primary-foreground" />
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] shadow-md group-hover:scale-105 transition-transform">
+              <LayoutGrid className="h-4 w-4 stroke-[2.5]" />
             </div>
-            <span className="text-sm font-semibold tracking-wide text-foreground">
-              Blueprint
+            <span className="text-sm font-bold tracking-tight text-foreground font-mono">
+              BLUEPRINT
             </span>
           </Link>
 
@@ -175,56 +175,6 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full"
-            onClick={toggleTheme}
-            title="Toggle Theme"
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-
-          {/* Notifications Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full relative"
-                title="Notifications"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-primary" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Notifications</h3>
-                <button className="text-[10px] text-primary hover:underline font-medium">Mark all read</button>
-              </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-border/60">
-                <div className="p-3.5 hover:bg-accent/40 text-left">
-                  <p className="text-xs font-semibold text-foreground leading-snug">New submission received</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug truncate">
-                    "Newsletter Signups" received a new response.
-                  </p>
-                  <span className="text-[9px] text-muted-foreground/60 mt-1 block">2 minutes ago</span>
-                </div>
-                <div className="p-3.5 hover:bg-accent/40 text-left">
-                  <p className="text-xs font-semibold text-foreground leading-snug">Form Published Successfully</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug truncate">
-                    "Customer Feedback Form" is now live.
-                  </p>
-                  <span className="text-[9px] text-muted-foreground/60 mt-1 block">3 hours ago</span>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <Separator orientation="vertical" className="h-4" />
-
           {/* Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -253,10 +203,6 @@ export default function DashboardLayout({
               <DropdownMenuItem className="gap-2 text-xs" onClick={() => router.push("/settings")}>
                 <Settings className="h-3.5 w-3.5" />
                 Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 text-xs" onClick={toggleTheme}>
-                {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                Theme ({theme === "dark" ? "Dark" : "Light"})
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="gap-2 text-xs text-destructive focus:text-destructive" onClick={handleSignOut}>

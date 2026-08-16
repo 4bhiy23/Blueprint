@@ -213,15 +213,23 @@ export default function DashboardPage() {
       {/* ─── Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">My Forms</h1>
-          <p className="text-muted-foreground text-sm">
-            Manage all your forms from one place.
+          <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+            My Forms
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[hsl(var(--mocha-mauve))/0.15] text-[hsl(var(--mocha-mauve))] border border-[hsl(var(--mocha-mauve))/0.3]">
+              {forms.length} TOTAL
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-xs font-mono mt-0.5">
+            // MANAGE, BUILD, AND PUBLISH CONVERSATIONAL FORMS
           </p>
         </div>
 
-        <Button onClick={handleNewForm} className="font-semibold text-xs gap-1.5 shrink-0 self-start sm:self-auto h-8">
-          <Plus className="h-4 w-4" />
-          New Form
+        <Button 
+          onClick={handleNewForm} 
+          className="font-bold text-xs gap-1.5 shrink-0 self-start sm:self-auto h-9 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all"
+        >
+          <Plus className="h-4 w-4 stroke-[2.5]" />
+          Create New Form
         </Button>
       </div>
 

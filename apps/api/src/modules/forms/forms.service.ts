@@ -398,12 +398,55 @@ export async function listResponsesForUser(input: {
     orderBy: (responsesTable, { desc }) => [desc(responsesTable.submittedAt)],
   });
 
+  const responseIds = formResponses.map((r) => r.id);
+  const allAnswers = responseIds.length
+    ? await db.query.answers.findMany({
+        where: (answersTable, { inArray }) => inArray(answersTable.responseId, responseIds),
+      })
+    : [];
+
+  const optionIds = allAnswers
+    .map((a) => a.optionId)
+    .filter((id): id is string => id !== null);
+
+  const selectedOptions = optionIds.length
+    ? await db.query.questionOptions.findMany({
+        where: (optionsTable, { inArray }) => inArray(optionsTable.id, optionIds),
+      })
+    : [];
+
+  const optionsById = new Map(selectedOptions.map((o) => [o.id, o]));
+
+  // Map answers by responseId and questionId
+  const answersByResponse = new Map<string, Array<{ questionId: string; answer: string }>>();
+
+  for (const ans of allAnswers) {
+    const list = answersByResponse.get(ans.responseId) ?? [];
+    let answerText = ans.value;
+    if (ans.optionId) {
+      const option = optionsById.get(ans.optionId);
+      if (option) {
+        answerText = option.label;
+      }
+    }
+    if (answerText) {
+      const existing = list.find((a) => a.questionId === ans.questionId);
+      if (existing) {
+        existing.answer += `, ${answerText}`;
+      } else {
+        list.push({ questionId: ans.questionId, answer: answerText });
+      }
+    }
+    answersByResponse.set(ans.responseId, list);
+  }
+
   return {
     form: { id: form.id, title: form.title },
     responses: formResponses.map((response) => ({
       id: response.id,
       submittedAt: response.submittedAt,
       completionMs: response.completionMs,
+      answers: answersByResponse.get(response.id) ?? [],
     })),
   };
 }

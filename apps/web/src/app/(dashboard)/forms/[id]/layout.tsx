@@ -82,12 +82,12 @@ export default function FormDetailsLayout({
          ───────────────────────────────────────────────────────────── */}
       <div className="space-y-3">
         {/* Breadcrumb: Forms / Current Form */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors font-medium">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+          <Link href="/" className="hover:text-[hsl(var(--mocha-mauve))] transition-colors font-medium">
             Forms
           </Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground font-semibold truncate max-w-[200px]">
+          <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
+          <span className="text-foreground font-semibold truncate max-w-50">
             {form?.title ?? "Loading form…"}
           </span>
         </div>
@@ -95,7 +95,7 @@ export default function FormDetailsLayout({
         {/* Title & Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground truncate max-w-md sm:max-w-xl">
+            <h1 className="text-2xl font-black tracking-tight text-foreground truncate max-w-md sm:max-w-xl">
               {form?.title ?? "Loading form…"}
             </h1>
             <Badge
@@ -106,7 +106,7 @@ export default function FormDetailsLayout({
                   ? "destructive"
                   : "muted"
               }
-              className="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5"
+              className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5"
             >
               {form?.status ?? "loading"}
             </Badge>
@@ -116,11 +116,11 @@ export default function FormDetailsLayout({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs font-semibold md:hidden border border-border gap-1.5 self-start"
+            className="h-8 text-xs font-bold md:hidden border border-border gap-1.5 self-start bg-card"
             onClick={() => setMobileNavOpen(true)}
           >
             <Menu className="h-3.5 w-3.5" />
-            Navigation: {currentActiveLink.label}
+            Nav: {currentActiveLink.label}
           </Button>
         </div>
       </div>
@@ -131,8 +131,11 @@ export default function FormDetailsLayout({
          WORKSPACE COLUMNS (Left Sidebar + Content Area)
          ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row gap-6 items-start">
-        {/* Left Side Navigation Panel (Desktop only, Github/Vercel style) */}
-        <aside className="hidden md:flex flex-col w-52 shrink-0 space-y-2.5">
+        {/* Left Side Navigation Panel (Catppuccin Mocha styled panel) */}
+        <aside className="hidden md:flex flex-col w-60 shrink-0 bg-card/60 border border-border rounded-2xl p-3.5 space-y-2.5 shadow-lg">
+          <div className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/60 border-b border-border/60 mb-1.5">
+            NAVIGATION
+          </div>
           {subLinks.map((link) => {
             const isActive = link.exact
               ? pathname === link.href
@@ -141,14 +144,17 @@ export default function FormDetailsLayout({
               <Link key={link.label} href={link.href}>
                 <span
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg py-1.5 px-3 text-xs font-semibold transition-all cursor-pointer border-l-2",
+                    "flex items-center justify-between rounded-xl py-2.5 px-3.5 text-xs font-bold transition-all cursor-pointer",
                     isActive
-                      ? "bg-accent/70 border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-accent/30 hover:text-foreground"
+                      ? "bg-[hsl(var(--mocha-mauve))/0.15] text-[hsl(var(--mocha-mauve))] border border-[hsl(var(--mocha-mauve))/0.3] shadow-sm"
+                      : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground border border-transparent"
                   )}
                 >
-                  <link.Icon className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
-                  <span>{link.label}</span>
+                  <div className="flex items-center gap-3">
+                    <link.Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-[hsl(var(--mocha-mauve))]" : "text-muted-foreground")} />
+                    <span>{link.label}</span>
+                  </div>
+                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--mocha-mauve))]" />}
                 </span>
               </Link>
             );
@@ -167,16 +173,16 @@ export default function FormDetailsLayout({
       {mobileNavOpen && (
         <div className="fixed inset-0 z-40 bg-black/80 md:hidden" onClick={() => setMobileNavOpen(false)}>
           <div
-            className="fixed top-0 bottom-0 left-0 z-50 flex w-60 flex-col bg-card p-5 space-y-4 shadow-xl border-r border-border"
+            className="fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col bg-card p-5 space-y-4 shadow-2xl border-r border-border"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Form Navigation</span>
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground">Form Navigation</span>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMobileNavOpen(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <nav className="space-y-1">
+            <nav className="space-y-1.5">
               {subLinks.map((link) => {
                 const isActive = link.exact
                   ? pathname === link.href
@@ -185,14 +191,17 @@ export default function FormDetailsLayout({
                   <Link key={link.label} href={link.href} onClick={() => setMobileNavOpen(false)}>
                     <span
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg py-2 px-3 text-xs font-semibold transition-colors cursor-pointer",
+                        "flex items-center justify-between rounded-xl py-2.5 px-3.5 text-xs font-bold transition-all cursor-pointer",
                         isActive
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                          ? "bg-[hsl(var(--mocha-mauve))/0.15] text-[hsl(var(--mocha-mauve))] border border-[hsl(var(--mocha-mauve))/0.3]"
+                          : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
                       )}
                     >
-                      <link.Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span>{link.label}</span>
+                      <div className="flex items-center gap-2.5">
+                        <link.Icon className="h-4 w-4 shrink-0" />
+                        <span>{link.label}</span>
+                      </div>
+                      {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--mocha-mauve))]" />}
                     </span>
                   </Link>
                 );

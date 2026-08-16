@@ -7,12 +7,17 @@ import {
   Globe,
   ArrowRight,
   FileText,
+  Check,
+  ExternalLink,
 } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   FORM_UPDATED_EVENT,
   type FormStatus,
@@ -49,6 +54,8 @@ export default function FormOverviewPage() {
     }
   };
 
+  const [copied, setCopied] = useState(false);
+
   const handleCopyLink = async () => {
     if (!formQuery.data) return;
 
@@ -56,9 +63,11 @@ export default function FormOverviewPage() {
       await navigator.clipboard.writeText(
         `${window.location.origin}/f/${formQuery.data.form.publicId}`,
       );
+      setCopied(true);
       toast.success("Link copied to clipboard", {
         description: "Send this URL to your respondents.",
       });
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Unable to copy the public link.");
     }
@@ -129,25 +138,75 @@ export default function FormOverviewPage() {
           <div className="grid gap-2">
             <Button
               size="sm"
-              className="w-full text-xs font-semibold h-8.5 gap-2"
+              className="w-full text-xs font-bold h-9 gap-2 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all"
               onClick={() => router.push(`/forms/${form.id}/builder`)}
             >
-              Open Builder <ArrowRight className="h-3 w-3" />
+              Open Builder <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-xs h-8.5 gap-2 border-border"
-              onClick={handleCopyLink}
-              disabled={form.status !== "published"}
-            >
-              <Copy className="h-3.5 w-3.5" /> Copy Public Link
-            </Button>
+
+            {/* Share Public Link Input with Copy & Open Controls */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] font-mono font-semibold text-muted-foreground uppercase tracking-wider block">
+                Public Form URL
+              </label>
+              <div className="flex items-center gap-1.5">
+                <div className="relative flex-1">
+                  <Input
+                    readOnly
+                    value={
+                      form.status === "published"
+                        ? `${typeof window !== "undefined" ? window.location.origin : ""}/f/${form.publicId}`
+                        : "Form must be published to share"
+                    }
+                    className="h-9 text-[11px] font-mono bg-secondary/40 border-border text-foreground pr-2 font-medium select-all"
+                  />
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  disabled={form.status !== "published"}
+                  className={cn(
+                    "h-9 px-3 text-xs font-semibold gap-1.5 transition-all border-border shrink-0 cursor-pointer",
+                    copied
+                      ? "bg-[hsl(var(--mocha-green))/0.2] border-[hsl(var(--mocha-green))/0.4] text-[hsl(var(--mocha-green))]"
+                      : "bg-secondary/40 hover:bg-secondary/80 text-foreground"
+                  )}
+                  title="Copy link to clipboard"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-[hsl(var(--mocha-green))]" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+
+                {form.status === "published" && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => window.open(`/f/${form.publicId}`, "_blank")}
+                    className="h-9 w-9 border-border bg-secondary/40 hover:bg-secondary/80 text-foreground shrink-0"
+                    title="Open public form in new tab"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {form.status === "draft" && (
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs h-8.5 gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                className="w-full text-xs font-semibold h-9 gap-2 border-[hsl(var(--mocha-green))/0.4] bg-[hsl(var(--mocha-green))/0.1] text-[hsl(var(--mocha-green))] hover:bg-[hsl(var(--mocha-green))/0.2]"
                 onClick={() => void updateStatus("published")}
               >
                 <Globe className="h-3.5 w-3.5" /> Publish Form
@@ -157,7 +216,7 @@ export default function FormOverviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs h-8.5 gap-2 border-border"
+                className="w-full text-xs font-semibold h-9 gap-2 border-border"
                 onClick={() => void updateStatus("closed")}
               >
                 Close Form
@@ -167,7 +226,7 @@ export default function FormOverviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs h-8.5 gap-2 border-border"
+                className="w-full text-xs font-semibold h-9 gap-2 border-border"
                 onClick={() => void updateStatus("draft")}
               >
                 Reopen as Draft
