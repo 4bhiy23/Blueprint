@@ -7,7 +7,7 @@ import { apiEnv } from "@repo/env";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
-import router from "./routes/index.js";
+import router from "./modules/index.js";
 import { errorHandler } from "./middleware/errors.js";
 import { auth } from "./libs/auth.js";
 import { toNodeHandler } from "better-auth/node";

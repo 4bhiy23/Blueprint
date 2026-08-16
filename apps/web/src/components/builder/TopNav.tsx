@@ -8,16 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { apiFetch } from "@/lib/api";
-import { FORM_UPDATED_EVENT } from "@/lib/forms";
+import { FORM_UPDATED_EVENT, type FormStatus } from "@/lib/forms";
+import { useFormMutations } from "@/features/forms/queries";
 
 interface TopNavProps {
   formId: string;
   formTitle: string;
   publicId: string | null;
-  status: string;
+  status: FormStatus;
   onFormTitleChange: (title: string) => void;
-  onStatusChange: (status: string) => void;
+  onStatusChange: (status: FormStatus) => void;
   saveStatus: "idle" | "saving" | "saved" | "error";
   onSaveStatusChange: (status: "idle" | "saving" | "saved" | "error") => void;
   readOnly?: boolean;
@@ -37,6 +37,7 @@ export function TopNav({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(formTitle);
   const [publishing, setPublishing] = useState(false);
+  const { update } = useFormMutations();
 
   // Sync draft title with incoming prop changes
   useEffect(() => {
@@ -59,13 +60,10 @@ export function TopNav({
     onSaveStatusChange("saving");
 
     try {
-      const response = await apiFetch<{ form: { id: string; status: string } }>(
-        `/forms/${formId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ status: "published" }),
-        }
-      );
+      const response = await update.mutateAsync({
+        formId,
+        status: "published",
+      });
       onStatusChange("published");
       onSaveStatusChange("saved");
       

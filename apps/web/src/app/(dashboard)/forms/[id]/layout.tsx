@@ -17,12 +17,11 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { apiFetch } from "@/lib/api";
 import {
   FORM_UPDATED_EVENT,
-  type FormDetails,
   type FormRecord,
 } from "@/lib/forms";
+import { useFormQuery } from "@/features/forms/queries";
 
 export default function FormDetailsLayout({
   children,
@@ -34,29 +33,16 @@ export default function FormDetailsLayout({
   const formId = (params?.formId || params?.id) as string;
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [form, setForm] = useState<FormRecord | null>(null);
-
-  useEffect(() => {
-    if (!formId) return;
-
-    const loadForm = async () => {
-      try {
-        const response = await apiFetch<FormDetails>(`/forms/${formId}`);
-        setForm(response.form);
-      } catch {
-        setForm(null);
-      }
-    };
-
-    void loadForm();
-  }, [formId]);
+  const { data: formDetails } = useFormQuery(formId);
+  const [updatedForm, setUpdatedForm] = useState<FormRecord | null>(null);
+  const form = updatedForm ?? formDetails?.form ?? null;
 
   useEffect(() => {
     const handleFormUpdated = (event: Event) => {
       const updatedForm = (event as CustomEvent<FormRecord>).detail;
 
       if (updatedForm?.id === formId) {
-        setForm(updatedForm);
+        setUpdatedForm(updatedForm);
       }
     };
 

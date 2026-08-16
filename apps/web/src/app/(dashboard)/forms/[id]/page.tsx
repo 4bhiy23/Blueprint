@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Calendar,
@@ -14,58 +13,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api";
 import {
   FORM_UPDATED_EVENT,
-  type FormDetails,
   type FormStatus,
 } from "@/lib/forms";
+import { useFormMutations, useFormQuery } from "@/features/forms/queries";
 
 export default function FormOverviewPage() {
   const router = useRouter();
   const params = useParams();
   const formId = (params?.formId || params?.id) as string;
 
-  const [formDetails, setFormDetails] = useState<FormDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!formId) return;
-
-    const loadForm = async () => {
-      try {
-        const response = await apiFetch<FormDetails>(`/forms/${formId}`);
-        setFormDetails(response);
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load the form.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadForm();
-  }, [formId]);
+  const formQuery = useFormQuery(formId);
+  const { update } = useFormMutations();
 
   const updateStatus = async (status: FormStatus) => {
-    if (!formDetails) return;
+    if (!formQuery.data) return;
 
     try {
-      const response = await apiFetch<{ form: FormDetails["form"] }>(
-        `/forms/${formDetails.form.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ status }),
-        },
-      );
+      const response = await update.mutateAsync({ formId: formQuery.data.form.id, status });
       const updatedForm = {
         ...response.form,
-        responseCount: formDetails.form.responseCount,
+        responseCount: formQuery.data.form.responseCount,
       };
-      setFormDetails((current) =>
-        current ? { ...current, form: updatedForm } : current,
-      );
       window.dispatchEvent(
         new CustomEvent(FORM_UPDATED_EVENT, { detail: updatedForm }),
       );
@@ -80,11 +50,11 @@ export default function FormOverviewPage() {
   };
 
   const handleCopyLink = async () => {
-    if (!formDetails) return;
+    if (!formQuery.data) return;
 
     try {
       await navigator.clipboard.writeText(
-        `${window.location.origin}/f/${formDetails.form.publicId}`,
+        `${window.location.origin}/f/${formQuery.data.form.publicId}`,
       );
       toast.success("Link copied to clipboard", {
         description: "Send this URL to your respondents.",
@@ -94,15 +64,15 @@ export default function FormOverviewPage() {
     }
   };
 
-  if (loading) {
+  if (formQuery.isLoading) {
     return <Card className="p-6 text-sm text-muted-foreground">Loading form…</Card>;
   }
 
-  if (!formDetails) {
+  if (!formQuery.data) {
     return <Card className="p-6 text-sm text-muted-foreground">Form not found.</Card>;
   }
 
-  const { form, questions } = formDetails;
+  const { form, questions } = formQuery.data;
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">

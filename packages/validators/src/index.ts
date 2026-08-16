@@ -159,3 +159,6 @@ export type UpdateFormInput = z.infer<typeof UpdateFormSchema>;
 export type BuilderInput = z.infer<typeof BuilderSchema>;
 export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>;
 export type SubmitResponseInput = z.infer<typeof SubmitResponseSchema>;
+export type FormStatus = z.infer<typeof FormStatusSchema>;
+export type QuestionType = z.infer<typeof QuestionTypeSchema>;
+export type QuestionOptionType = z.infer<typeof QuestionOptionTypeSchema>;

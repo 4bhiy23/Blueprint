@@ -1,5 +1,11 @@
 import { type Node, type Edge } from "@xyflow/react";
-import { QUESTION_TYPES, QUESTION_OPTION_TYPES } from "@repo/validators";
+import {
+  QUESTION_TYPES,
+  QUESTION_OPTION_TYPES,
+  type BuilderInput,
+  type QuestionOptionType,
+  type QuestionType,
+} from "@repo/validators";
 import {
   Type,
   Hash,
@@ -16,14 +22,10 @@ import {
 
 // ─── Re-exported from @repo/validators ─────────────────────────────────────
 export { QUESTION_TYPES, QUESTION_OPTION_TYPES };
-export type QuestionType = (typeof QUESTION_TYPES)[number];
-export type QuestionOptionType = (typeof QUESTION_OPTION_TYPES)[number];
+export type { QuestionOptionType, QuestionType };
 
 // ─── Question option ────────────────────────────────────────────────────────
-export interface QuestionOption {
-  id: string;
-  label: string;
-}
+export type QuestionOption = BuilderInput["nodes"][number]["data"]["options"][number];
 
 // ─── Node data shapes ───────────────────────────────────────────────────────
 export interface QuestionNodeData extends Record<string, unknown> {

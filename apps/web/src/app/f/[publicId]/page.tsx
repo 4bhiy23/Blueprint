@@ -9,37 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { apiFetch } from "@/lib/api";
+import {
+  usePublicFormQuery,
+  usePublicResponseMutation,
+} from "@/features/forms/queries";
 import { toast } from "sonner";
-
-interface PublicForm {
-  id: string;
-  publicId: string;
-  title: string;
-  description: string | null;
-}
-
-interface PublicQuestionOption {
-  id: string;
-  label: string;
-}
-
-interface PublicQuestion {
-  id: string;
-  title: string;
-  description: string | null;
-  type: "text" | "number" | "email" | "select" | "radio" | "checkbox" | "paragraph" | "date" | "datetime" | "time" | "rating";
-  required: boolean;
-  options: PublicQuestionOption[];
-  ratingMax: number;
-  ratingLowLabel: string;
-  ratingHighLabel: string;
-}
-
-interface PublicFormResponse {
-  form: PublicForm;
-  questions: PublicQuestion[];
-}
 
 interface UserAnswer {
   value: string;
@@ -50,10 +24,9 @@ export default function PublicFormResponderPage() {
   const params = useParams();
   const publicId = params?.publicId as string;
 
-  const [formResponse, setFormResponse] = useState<PublicFormResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const formQuery = usePublicFormQuery(publicId);
+  const submitResponse = usePublicResponseMutation();
 
   // Flow State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -64,26 +37,16 @@ export default function PublicFormResponderPage() {
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!publicId) return;
+    if (formQuery.data) startTimeRef.current = Date.now();
+  }, [formQuery.data]);
 
-    const loadForm = async () => {
-      try {
-        const response = await apiFetch<PublicFormResponse>(`/public/forms/${publicId}`);
-        setFormResponse(response);
-        startTimeRef.current = Date.now();
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load this form.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+  useEffect(() => {
+    if (formQuery.error) {
+      toast.error(formQuery.error instanceof Error ? formQuery.error.message : "Unable to load this form.");
+    }
+  }, [formQuery.error]);
 
-    void loadForm();
-  }, [publicId]);
-
-  if (loading) {
+  if (formQuery.isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.1),transparent_50%)]" />
@@ -96,7 +59,7 @@ export default function PublicFormResponderPage() {
     );
   }
 
-  if (!formResponse || !formResponse.questions.length) {
+  if (!formQuery.data || !formQuery.data.questions.length) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.1),transparent_50%)]" />
@@ -110,7 +73,7 @@ export default function PublicFormResponderPage() {
     );
   }
 
-  const { form, questions } = formResponse;
+  const { form, questions } = formQuery.data;
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
   const isFirst = currentIndex === 0;
@@ -192,7 +155,6 @@ export default function PublicFormResponderPage() {
   };
 
   const handleSubmit = async () => {
-    setSubmitting(true);
     const completionMs = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
 
     const answerPayloads: {
@@ -228,10 +190,7 @@ export default function PublicFormResponderPage() {
     };
 
     try {
-      await apiFetch(`/public/forms/${form.publicId}/responses`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      await submitResponse.mutateAsync({ publicId: form.publicId, ...payload });
 
       setSubmitted(true);
       
@@ -264,8 +223,6 @@ export default function PublicFormResponderPage() {
       toast.error(
         error instanceof Error ? error.message : "Unable to submit response. Please try again.",
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -521,14 +478,14 @@ export default function PublicFormResponderPage() {
 
           <Button
             onClick={handleNext}
-            disabled={submitting}
+            disabled={submitResponse.isPending}
             className={`gap-1.5 h-10 px-5 rounded-xl cursor-pointer shadow-md ${
               isLast 
                 ? "bg-emerald-650 hover:bg-emerald-600 text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]" 
                 : "bg-primary hover:bg-primary/90 text-white"
             }`}
           >
-            {submitting ? (
+            {submitResponse.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Submitting
               </>

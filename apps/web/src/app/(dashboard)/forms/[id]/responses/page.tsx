@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowUpDown, Eye, Inbox, Search } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -8,26 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/api";
-import type { FormResponses } from "@/lib/forms";
-import { toast } from "sonner";
+import { useFormResponsesQuery } from "@/features/forms/queries";
 
 export default function ResponsesPage() {
   const params = useParams();
   const router = useRouter();
   const formId = (params?.formId || params?.id) as string;
-  const [data, setData] = useState<FormResponses | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useFormResponsesQuery(formId);
   const [search, setSearch] = useState("");
   const [sortAscending, setSortAscending] = useState(false);
-
-  useEffect(() => {
-    if (!formId) return;
-    void apiFetch<FormResponses>(`/forms/${formId}/responses`)
-      .then(setData)
-      .catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load responses."))
-      .finally(() => setLoading(false));
-  }, [formId]);
 
   const responses = useMemo(() => {
     if (!data) return [];
@@ -39,7 +28,7 @@ export default function ResponsesPage() {
       });
   }, [data, search, sortAscending]);
 
-  if (loading) return <Skeleton className="h-80 w-full" />;
+  if (isLoading) return <Skeleton className="h-80 w-full" />;
   if (!data) return null;
 
   return (

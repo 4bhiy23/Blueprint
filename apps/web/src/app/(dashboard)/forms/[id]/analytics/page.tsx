@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { BarChart3, Clock3, Users } from "lucide-react";
-import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch } from "@/lib/api";
-import type { FormAnalytics } from "@/lib/forms";
+import { useFormAnalyticsQuery } from "@/features/forms/queries";
 
 function formatDuration(milliseconds: number | null) {
   if (milliseconds === null) return "—";
@@ -20,26 +17,9 @@ function formatDuration(milliseconds: number | null) {
 export default function FormAnalyticsPage() {
   const params = useParams();
   const formId = (params?.formId || params?.id) as string;
-  const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: analytics, isLoading } = useFormAnalyticsQuery(formId);
 
-  useEffect(() => {
-    if (!formId) return;
-
-    const loadAnalytics = async () => {
-      try {
-        setAnalytics(await apiFetch<FormAnalytics>(`/forms/${formId}/analytics`));
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Unable to load analytics.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadAnalytics();
-  }, [formId]);
-
-  if (loading) {
+  if (isLoading) {
     return <Skeleton className="h-80 w-full" />;
   }
 

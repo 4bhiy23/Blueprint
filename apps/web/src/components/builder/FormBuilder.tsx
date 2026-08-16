@@ -24,8 +24,10 @@ import { TopNav } from "./TopNav";
 import { ComponentLibrary } from "./ComponentLibrary";
 import { BuilderCanvas } from "./BuilderCanvas";
 import { PropertiesPanel } from "./PropertiesPanel";
-import { apiFetch } from "@/lib/api";
 import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
+import { type BuilderData } from "@/features/forms/api";
+import { useBuilderQuery, useFormMutations, useFormQuery } from "@/features/forms/queries";
+import type { FormRecord } from "@/lib/forms";
 import {
   type BuilderNode,
   type BuilderEdge,
@@ -38,39 +40,6 @@ import {
   START_NODE_ID,
   SUBMIT_NODE_ID,
 } from "./types";
-
-interface FormRecord {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  publicId: string;
-}
-
-interface FormDetails {
-  form: FormRecord;
-}
-
-interface BackendBuilderNode {
-  id: string;
-  type: QuestionType;
-  position: { x: number; y: number };
-  data: {
-    title: string;
-    description: string;
-    required: boolean;
-    options: QuestionOption[];
-    ratingMax: number;
-    ratingLowLabel: string;
-    ratingHighLabel: string;
-  };
-}
-
-interface BackendBuilderResponse {
-  nodes: BackendBuilderNode[];
-  edges: { source: string; target: string }[];
-  viewport: Record<string, unknown>;
-}
 
 // ─── Safe UUID generator ───────────────────────────────────────────────────
 function generateUUID(): string {
@@ -113,15 +82,19 @@ function FormBuilderInner() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<BuilderEdge>([]);
 
   const [form, setForm] = useState<FormRecord | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [draggedType, setDraggedType] = useState<QuestionType | null>(null);
   const isReadOnly = form?.status === "published";
+  const formQuery = useFormQuery(formId);
+  const builderQuery = useBuilderQuery(formId);
+  const { saveBuilder, update } = useFormMutations();
 
   const rfInstance = useReactFlow();
+  const isInitialMountRef = useRef(true);
+  const hasHydratedBuilderRef = useRef(false);
 
   // Track pointer position for accurate drop coords
   const pointerRef = useRef({ x: 0, y: 0 });
@@ -133,25 +106,21 @@ function FormBuilderInner() {
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
 
-  // 1. Fetch Form Details & Builder Graph
+  // 1. Hydrate React Flow state from the cached form and builder queries.
   useEffect(() => {
-    if (!formId) return;
+    const formDetails = formQuery.data;
+    const builderData = builderQuery.data;
+    if (!formDetails || !builderData) return;
 
-    const initData = async () => {
-      try {
-        const [formDetails, builderData] = await Promise.all([
-          apiFetch<FormDetails>(`/forms/${formId}`),
-          apiFetch<BackendBuilderResponse>(`/forms/${formId}/builder`),
-        ]);
+    setForm(formDetails.form);
+    if (hasHydratedBuilderRef.current) return;
 
-        setForm(formDetails.form);
+    // Convert backend builder schema to frontend React Flow nodes and edges
+    const backendNodes = builderData.nodes || [];
+    const backendEdges = builderData.edges || [];
 
-        // Convert backend builder schema to frontend React Flow nodes and edges
-        const backendNodes = builderData.nodes || [];
-        const backendEdges = builderData.edges || [];
-
-        // Map backend nodes to frontend representation
-        const questionNodes: BuilderNode[] = backendNodes.map((n) => ({
+    // Map backend nodes to frontend representation
+    const questionNodes: BuilderNode[] = backendNodes.map((n) => ({
           id: n.id,
           type: "question",
           position: n.position,
@@ -165,23 +134,23 @@ function FormBuilderInner() {
             ratingLowLabel: n.data.ratingLowLabel ?? "",
             ratingHighLabel: n.data.ratingHighLabel ?? "",
           },
-        }));
+    }));
 
-        const incomingMap = new Set(backendEdges.map((edge) => edge.target));
-        const outgoingMap = new Set(backendEdges.map((edge) => edge.source));
-        const firstQuestionNode = backendNodes.find((node) => !incomingMap.has(node.id));
-        const lastQuestionNode = backendNodes.find((node) => !outgoingMap.has(node.id));
+    const incomingMap = new Set(backendEdges.map((edge) => edge.target));
+    const outgoingMap = new Set(backendEdges.map((edge) => edge.source));
+    const firstQuestionNode = backendNodes.find((node) => !incomingMap.has(node.id));
+    const lastQuestionNode = backendNodes.find((node) => !outgoingMap.has(node.id));
 
         // Position virtual nodes above and below the form's linear flow.
-        const startPosition = firstQuestionNode
-          ? { x: firstQuestionNode.position.x + 64, y: firstQuestionNode.position.y - 110 }
-          : { x: 320, y: 80 };
-        const submitPosition = lastQuestionNode
-          ? { x: lastQuestionNode.position.x + 64, y: lastQuestionNode.position.y + 180 }
-          : { x: 320, y: 520 };
+    const startPosition = firstQuestionNode
+      ? { x: firstQuestionNode.position.x + 64, y: firstQuestionNode.position.y - 110 }
+      : { x: 320, y: 80 };
+    const submitPosition = lastQuestionNode
+      ? { x: lastQuestionNode.position.x + 64, y: lastQuestionNode.position.y + 180 }
+      : { x: 320, y: 520 };
 
         // Add virtual start/submit nodes
-        const finalNodes: BuilderNode[] = [
+    const finalNodes: BuilderNode[] = [
           {
             id: START_NODE_ID,
             type: "start",
@@ -199,51 +168,50 @@ function FormBuilderInner() {
             deletable: false,
             draggable: true,
           },
-        ];
+    ];
 
         // Construct frontend React Flow edges (backend edges + virtual start/submit edges)
-        const finalEdges: BuilderEdge[] = backendEdges.map((e) => ({
+    const finalEdges: BuilderEdge[] = backendEdges.map((e) => ({
           id: `edge_${e.source}_to_${e.target}`,
           source: e.source,
           target: e.target,
           type: "deletable",
-        }));
+    }));
 
         // Link virtual start/submit nodes to the linear flow.
-        if (firstQuestionNode) {
-          finalEdges.push({
-            id: `edge_start_to_${firstQuestionNode.id}`,
-            source: START_NODE_ID,
-            target: firstQuestionNode.id,
-            type: "deletable",
-          });
-        }
+    if (firstQuestionNode) {
+      finalEdges.push({
+        id: `edge_start_to_${firstQuestionNode.id}`,
+        source: START_NODE_ID,
+        target: firstQuestionNode.id,
+        type: "deletable",
+      });
+    }
 
-        if (lastQuestionNode) {
-          finalEdges.push({
-            id: `edge_${lastQuestionNode.id}_to_submit`,
-            source: lastQuestionNode.id,
-            target: SUBMIT_NODE_ID,
-            type: "deletable",
-          });
-        }
+    if (lastQuestionNode) {
+      finalEdges.push({
+        id: `edge_${lastQuestionNode.id}_to_submit`,
+        source: lastQuestionNode.id,
+        target: SUBMIT_NODE_ID,
+        type: "deletable",
+      });
+    }
 
-        setNodes(finalNodes);
-        setEdges(finalEdges);
-        setIsLoaded(true);
-      } catch (error) {
-        toast.error("Unable to load the form builder.");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    hasHydratedBuilderRef.current = true;
+    isInitialMountRef.current = true;
+    setNodes(finalNodes);
+    setEdges(finalEdges);
+    setIsLoaded(true);
+  }, [builderQuery.data, formQuery.data, setEdges, setNodes]);
 
-    void initData();
-  }, [formId, setNodes, setEdges]);
+  useEffect(() => {
+    if (formQuery.error || builderQuery.error) {
+      toast.error("Unable to load the form builder.");
+    }
+  }, [builderQuery.error, formQuery.error]);
 
   // Helper: Serialize React Flow nodes and edges to Backend schema
-  const serializeToBackend = useCallback((currentNodes: BuilderNode[], currentEdges: any[]) => {
+  const serializeToBackend = useCallback((currentNodes: BuilderNode[], currentEdges: any[]): BuilderData => {
     const questionNodes = currentNodes.filter((n) => n.type === "question") as QuestionFlowNode[];
     const serializedNodes = questionNodes.map((n) => ({
       id: n.id,
@@ -283,10 +251,7 @@ function FormBuilderInner() {
 
       try {
         const payload = serializeToBackend(currentNodes, currentEdges);
-        await apiFetch(`/forms/${formId}/builder`, {
-          method: "PUT",
-          body: JSON.stringify(payload),
-        });
+        await saveBuilder.mutateAsync({ formId, builder: payload });
         setSaveStatus("saved");
       } catch (error) {
         console.error("Autosave failed:", error);
@@ -295,8 +260,6 @@ function FormBuilderInner() {
     },
     1000
   );
-
-  const isInitialMountRef = useRef(true);
 
   // Trigger save whenever nodes or edges change (skip initial load)
   useEffect(() => {
@@ -316,10 +279,7 @@ function FormBuilderInner() {
     if (isReadOnly) return;
 
     try {
-      await apiFetch(`/forms/${formId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ title: newTitle }),
-      });
+      await update.mutateAsync({ formId, title: newTitle });
       setSaveStatus("saved");
     } catch (error) {
       console.error("Rename failed:", error);
@@ -341,10 +301,7 @@ function FormBuilderInner() {
     setForm((f) => (f ? { ...f, description: newDescription } : f));
 
     try {
-      await apiFetch(`/forms/${formId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ description: newDescription }),
-      });
+      await update.mutateAsync({ formId, description: newDescription });
       setSaveStatus("saved");
     } catch (error) {
       console.error("Description update failed:", error);
@@ -489,7 +446,7 @@ function FormBuilderInner() {
     [setNodes]
   );
 
-  if (loading) {
+  if (formQuery.isLoading || builderQuery.isLoading) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 text-primary animate-spin" />

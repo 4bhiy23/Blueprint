@@ -11,6 +11,28 @@
  *         issues:
  *           type: object
  *           additionalProperties: true
+ *     HealthCheck:
+ *       type: object
+ *       required: [status, name, uptimeSeconds, timestamp]
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [ok, degraded]
+ *         name:
+ *           type: string
+ *           example: Blueprint API
+ *         uptimeSeconds:
+ *           type: integer
+ *           minimum: 0
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *         checks:
+ *           type: object
+ *           properties:
+ *             database:
+ *               type: string
+ *               enum: [ok, unavailable]
  *     FormStatus:
  *       type: string
  *       enum: [draft, published, closed, archived]
@@ -383,10 +405,31 @@
  * /health:
  *   get:
  *     tags: [Health]
- *     summary: Health check
+ *     summary: Readiness check
  *     responses:
  *       '200':
- *         description: API is running
+ *         description: API and database are available
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ *       '503':
+ *         description: API is running but the database is unavailable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ * /health/live:
+ *   get:
+ *     tags: [Health]
+ *     summary: Liveness check
+ *     responses:
+ *       '200':
+ *         description: API process is running
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
  * /public/forms/{publicId}:
  *   get:
  *     tags: [Public Forms]

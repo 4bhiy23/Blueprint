@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/requireAuth.js";
+import { requireAuth } from "../../middleware/requireAuth.js";
 import {
   createForm,
   deleteForm,
@@ -12,7 +12,7 @@ import {
   listResponses,
   saveBuilder,
   updateForm,
-} from "../controllers/forms.controller.js";
+} from "./forms.controller.js";
 
 const router = Router();
 

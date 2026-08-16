@@ -1,4 +1,6 @@
-export type FormStatus = "draft" | "published" | "closed" | "archived";
+import type { FormStatus, QuestionType } from "@repo/validators";
+
+export type { FormStatus } from "@repo/validators";
 export const FORM_UPDATED_EVENT = "blueprint:form-updated";
 
 export interface FormRecord {
@@ -20,7 +22,7 @@ export interface FormQuestion {
   id: string;
   title: string;
   description: string | null;
-  type: "text" | "number" | "email" | "select" | "radio" | "checkbox" | "paragraph" | "date" | "datetime" | "time" | "rating";
+  type: QuestionType;
   required: boolean;
   options: FormOption[];
   ratingMax: number;

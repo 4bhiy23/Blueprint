@@ -1,7 +1,7 @@
 import { Router } from "express";
-import healthRouter from "./health.router.js";
-import formsRouter from "./forms.router.js";
-import publicFormsRouter from "./public-forms.router.js";
+import healthRouter from "./health/health.router.js";
+import formsRouter from "./forms/forms.router.js";
+import publicFormsRouter from "./public-forms/public-forms.router.js";
 
 const router = Router();
 

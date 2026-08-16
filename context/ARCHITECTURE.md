@@ -14,9 +14,20 @@ packages/
 context/     AI and contributor context
 ```
 
-## API layering
+## API modules
 
-The API follows this flow:
+The API is organized by feature under `apps/api/src/modules/`:
+
+```text
+modules/
+  forms/         # authenticated form management and builder persistence
+  public-forms/  # anonymous published-form reads and response submission
+  health/        # liveness and database-readiness endpoints
+```
+
+Each module owns its router, controller, and service together. Shared concerns remain outside modules in `middleware/`, `config/`, `libs/`, and `types/`.
+
+Within a module, requests follow this flow:
 
 `route -> controller -> service -> Drizzle database`
 
@@ -33,7 +44,8 @@ The Express app mounts all application routes under `/api/v2`.
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/health` | No | Health check |
+| GET | `/health/live` | No | Liveness check; confirms the API process is serving without checking dependencies |
+| GET | `/health` | No | Readiness check; verifies the database connection and returns `503` when unavailable |
 | POST | `/forms` | Yes | Create a draft form |
 | GET | `/forms` | Yes | List the caller’s forms |
 | GET | `/forms/:id` | Yes | Get owner form data and ordered questions/options |
@@ -46,6 +58,8 @@ The Express app mounts all application routes under `/api/v2`.
 | POST | `/public/forms/:publicId/responses` | No | Submit a response to a published form |
 
 Swagger is served at `/api-docs`; its JSON is at `/api-docs.json`.
+
+The health module emits a timestamp and process uptime for both endpoints. Readiness returns `checks.database: "ok"` on success or `"unavailable"` with a `degraded` status on failure; the underlying database error is logged but never returned to callers.
 
 ## Form persistence model
 
@@ -65,7 +79,9 @@ The API currently writes builder state as a form aggregate. A save validates IDs
 ## Frontend model
 
 - Dashboard and form-management pages are client components.
-- The dashboard uses `apiFetch` in `apps/web/src/lib/api.ts` for API v2 calls with cookies enabled.
+- `QueryProvider` configures TanStack Query once at the application root. Form reads and writes use the feature-owned `apps/web/src/features/forms/api.ts` and `queries.ts` modules; `apiFetch` remains the shared cookie-enabled API v2 transport.
+- Form query keys are centralized in `apps/web/src/features/forms/query-keys.ts`. Mutations invalidate or update the relevant form, dashboard, analytics, response, and builder cache entries.
+- Domain schemas, constants, and inferred request types (`FormStatus`, `QuestionType`, `BuilderInput`, `UpdateFormInput`, and `SubmitResponseInput`) are owned by `@repo/validators` and consumed by both applications. Do not duplicate their unions or request-payload shapes in an app.
 - Better Auth uses `NEXT_PUBLIC_API_URL` as its base URL.
 - The public responder page at `/f/:publicId` (`apps/web/src/app/f/[publicId]/page.tsx`) is unauthenticated and drives the public read + submit endpoints.
 - The builder uses React Flow and dnd-kit. It loads and saves through `GET`/`PUT /forms/:id/builder` with explicit adapters, generates UUIDs for new questions/options, and debounced-autosaves graph and metadata.

@@ -5,7 +5,7 @@ import {
   getPublicFormForResponder,
   SubmissionValidationError,
   submitResponseForPublicForm,
-} from "../services/forms.service.js";
+} from "../forms/forms.service.js";
 
 function getPublicId(req: Request) {
   const { publicId } = req.params;

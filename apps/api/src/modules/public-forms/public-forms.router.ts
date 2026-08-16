@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getPublicForm,
   submitPublicResponse,
-} from "../controllers/public-forms.controller.js";
+} from "./public-forms.controller.js";
 
 const router = Router();
 

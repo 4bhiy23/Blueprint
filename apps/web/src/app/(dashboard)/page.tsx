@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -41,8 +41,8 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api";
 import type { FormRecord, FormStatus } from "@/lib/forms";
+import { useFormMutations, useFormsQuery } from "@/features/forms/queries";
 
 interface FormCardData {
   id: string;
@@ -85,8 +85,9 @@ export default function DashboardPage() {
   const router = useRouter();
 
   // State management
-  const [forms, setForms] = useState<FormCardData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useFormsQuery();
+  const { create, duplicate, remove, update } = useFormMutations();
+  const forms = (data?.forms ?? []).map(toFormCard);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | FormStatus>("all");
   const [activeSort, setActiveSort] = useState<"recent" | "newest" | "oldest" | "alpha">("recent");
@@ -100,30 +101,10 @@ export default function DashboardPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<FormCardData | null>(null);
 
-  useEffect(() => {
-    const loadForms = async () => {
-      try {
-        const response = await apiFetch<{ forms: FormRecord[] }>("/forms");
-        setForms(response.forms.map(toFormCard));
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load forms.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadForms();
-  }, []);
-
   /* ─── Actions ──────────────────────────────────────────────────────────── */
   const handleNewForm = async () => {
     try {
-      const response = await apiFetch<{ form: FormRecord }>("/forms", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
+      const response = await create.mutateAsync();
       toast.success("Form created");
       router.push(`/forms/${response.form.id}`);
     } catch (error) {
@@ -135,11 +116,7 @@ export default function DashboardPage() {
 
   const handleDuplicate = async (form: FormCardData) => {
     try {
-      const response = await apiFetch<{ form: FormRecord }>(
-        `/forms/${form.id}/duplicate`,
-        { method: "POST" },
-      );
-      setForms((currentForms) => [toFormCard(response.form), ...currentForms]);
+      const response = await duplicate.mutateAsync(form.id);
       toast.success("Form duplicated", {
         description: `Created copy of "${form.title}"`,
       });
@@ -152,21 +129,7 @@ export default function DashboardPage() {
 
   const handleStatusChange = async (form: FormCardData, status: FormStatus) => {
     try {
-      const response = await apiFetch<{ form: FormRecord }>(`/forms/${form.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
-
-      setForms((currentForms) =>
-        currentForms.map((currentForm) =>
-          currentForm.id === form.id
-            ? toFormCard({
-                ...response.form,
-                responseCount: currentForm.responseCount,
-              })
-            : currentForm,
-        ),
-      );
+      await update.mutateAsync({ formId: form.id, status });
       toast.success(`Form ${status === "published" ? "published" : `moved to ${status}`}`);
     } catch (error) {
       toast.error(
@@ -188,23 +151,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const response = await apiFetch<{ form: FormRecord }>(
-        `/forms/${formToRename.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ title: renameValue.trim() }),
-        },
-      );
-      setForms((currentForms) =>
-        currentForms.map((form) =>
-          form.id === response.form.id
-            ? toFormCard({
-                ...response.form,
-                responseCount: form.responseCount,
-              })
-            : form,
-        ),
-      );
+      await update.mutateAsync({ formId: formToRename.id, title: renameValue.trim() });
       setRenameDialogOpen(false);
       toast.success("Form renamed successfully");
     } catch (error) {
@@ -223,10 +170,7 @@ export default function DashboardPage() {
     if (!formToDelete) return;
 
     try {
-      await apiFetch<void>(`/forms/${formToDelete.id}`, { method: "DELETE" });
-      setForms((currentForms) =>
-        currentForms.filter((form) => form.id !== formToDelete.id),
-      );
+      await remove.mutateAsync(formToDelete.id);
       setDeleteDialogOpen(false);
       toast.success("Form deleted", {
         description: `"${formToDelete.title}" has been deleted.`,
@@ -534,7 +478,7 @@ export default function DashboardPage() {
          ───────────────────────────────────────────────────────────── */}
       {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent className="max-w-[400px]">
+        <DialogContent className="max-w-100">
           <DialogHeader>
             <DialogTitle className="text-sm">Rename Form</DialogTitle>
             <DialogDescription className="text-xs">
@@ -562,7 +506,7 @@ export default function DashboardPage() {
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-[400px]">
+        <DialogContent className="max-w-100">
           <DialogHeader>
             <DialogTitle className="text-sm flex items-center gap-2 text-destructive">
               <FolderLock className="h-4 w-4" />

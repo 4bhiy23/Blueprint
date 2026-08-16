@@ -13,7 +13,11 @@ import {
   responses,
   sql,
 } from "@repo/db";
-import type { BuilderInput, SubmitAnswerInput } from "@repo/validators";
+import type {
+  BuilderInput,
+  SubmitAnswerInput,
+  UpdateFormInput,
+} from "@repo/validators";
 import { QUESTION_OPTION_TYPES } from "@repo/validators";
 
 function createPublicId() {
@@ -745,10 +749,7 @@ export async function submitResponseForPublicForm(input: {
 export async function updateFormForUser(input: {
   userId: string;
   formId: string;
-  title?: string;
-  description?: string;
-  status?: "draft" | "published" | "closed" | "archived";
-}) {
+} & UpdateFormInput) {
   const existingForm = await db.query.forms.findFirst({
     where: (formsTable, { and, eq }) =>
       and(
