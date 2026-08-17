@@ -451,6 +451,31 @@ export async function listResponsesForUser(input: {
   };
 }
 
+export async function getResponsesCsvExportForUser(input: {
+  userId: string;
+  formId: string;
+}) {
+  const responseData = await listResponsesForUser(input);
+
+  if (!responseData) {
+    return null;
+  }
+
+  const formQuestions = await db.query.questions.findMany({
+    where: (questionsTable, { eq }) => eq(questionsTable.formId, input.formId),
+    orderBy: (questionsTable, { asc }) => [asc(questionsTable.orderIndex)],
+    columns: {
+      id: true,
+      title: true,
+    },
+  });
+
+  return {
+    ...responseData,
+    questions: formQuestions,
+  };
+}
+
 export async function getResponseForUser(input: {
   userId: string;
   formId: string;

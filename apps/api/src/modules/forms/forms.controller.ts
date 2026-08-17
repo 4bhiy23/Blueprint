@@ -3,6 +3,7 @@ import {
   createFormForUser,
   deleteFormForUser,
   duplicateFormForUser,
+  getResponsesCsvExportForUser,
   BuilderValidationError,
   FormEditingLockedError,
   getBuilderForUser,
@@ -124,6 +125,66 @@ export async function listResponses(req: Request, res: Response) {
   if (!result) return res.status(404).json({ error: "Form not found" });
 
   return res.status(200).json(result);
+}
+
+function toCsvCell(value: string | number | null | undefined) {
+  const normalized = value === null || value === undefined ? "" : String(value);
+  const formulaSafe = /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
+  return `"${formulaSafe.replaceAll('"', '""')}"`;
+}
+
+function toExportFilename(title: string) {
+  const baseName = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "form";
+
+  return `${baseName}-responses.csv`;
+}
+
+export async function exportResponsesCsv(req: Request, res: Response) {
+  const userId = getUserId(req);
+  const formId = getFormId(req);
+
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!formId) return res.status(400).json({ error: "Invalid form id" });
+
+  const result = await getResponsesCsvExportForUser({ userId, formId });
+  if (!result) return res.status(404).json({ error: "Form not found" });
+
+  const headers = [
+    "Response ID",
+    "Submitted At",
+    "Completion Seconds",
+    ...result.questions.map((question, index) => `Question ${index + 1}: ${question.title}`),
+  ];
+
+  const rows = result.responses.map((response) => {
+    const answersByQuestionId = new Map(
+      response.answers.map((answer) => [answer.questionId, answer.answer]),
+    );
+
+    return [
+      response.id,
+      response.submittedAt.toISOString(),
+      response.completionMs === null
+        ? ""
+        : (response.completionMs / 1000).toFixed(2),
+      ...result.questions.map((question) => answersByQuestionId.get(question.id) ?? ""),
+    ];
+  });
+
+  const csv = `\uFEFF${[headers, ...rows]
+    .map((row) => row.map(toCsvCell).join(","))
+    .join("\r\n")}\r\n`;
+
+  res
+    .status(200)
+    .type("text/csv")
+    .setHeader("Content-Disposition", `attachment; filename="${toExportFilename(result.form.title)}"`)
+    .send(csv);
 }
 
 export async function getResponse(req: Request, res: Response) {

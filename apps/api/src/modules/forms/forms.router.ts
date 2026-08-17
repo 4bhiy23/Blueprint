@@ -4,6 +4,7 @@ import {
   createForm,
   deleteForm,
   duplicateForm,
+  exportResponsesCsv,
   getBuilder,
   getFormAnalytics,
   getForm,
@@ -21,6 +22,7 @@ router.use(requireAuth);
 router.post("/", createForm);
 router.get("/", listForms);
 router.get("/:id/analytics", getFormAnalytics);
+router.get("/:id/responses/export", exportResponsesCsv);
 router.get("/:id/responses", listResponses);
 router.get("/:id/responses/:responseId", getResponse);
 router.get("/:id", getForm);

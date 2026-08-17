@@ -55,6 +55,32 @@ export const formsApi = {
   analytics: (formId: string) => apiFetch<FormAnalytics>(`/forms/${formId}/analytics`),
   responses: (formId: string) => apiFetch<FormResponses>(`/forms/${formId}/responses`),
   response: (formId: string, responseId: string) => apiFetch<FormResponseDetails>(`/forms/${formId}/responses/${responseId}`),
+  downloadResponsesCsv: async (formId: string) => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+    if (!apiBaseUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured.");
+
+    const response = await fetch(`${apiBaseUrl}/api/v2/forms/${formId}/responses/export`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Unable to export responses.");
+    }
+
+    const blob = await response.blob();
+    const filename = response.headers
+      .get("Content-Disposition")
+      ?.match(/filename="?([^";]+)"?/)?.[1] ?? "form-responses.csv";
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(downloadUrl);
+  },
   builder: (formId: string) => apiFetch<BuilderData>(`/forms/${formId}/builder`),
   saveBuilder: (formId: string, builder: BuilderData) =>
     apiFetch<BuilderData>(`/forms/${formId}/builder`, { method: "PUT", body: JSON.stringify(builder) }),

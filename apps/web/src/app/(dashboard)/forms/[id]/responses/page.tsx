@@ -8,6 +8,8 @@ import {
   BarChart2, 
   Eye, 
   Inbox, 
+  Download,
+  Loader2,
   Search, 
   UserCheck 
 } from "lucide-react";
@@ -22,6 +24,8 @@ import {
   useFormResponsesQuery, 
   useFormQuery 
 } from "@/features/forms/queries";
+import { formsApi } from "@/features/forms/api";
+import { toast } from "sonner";
 
 export default function ResponsesPage() {
   const params = useParams();
@@ -35,6 +39,7 @@ export default function ResponsesPage() {
   // View switch: "default" (original submissions table) vs "questions" (per-question carousel)
   const [activeTab, setActiveTab] = useState<"default" | "questions">("default");
   const [search, setSearch] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Question Carousel state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -53,6 +58,18 @@ export default function ResponsesPage() {
   }, [responsesData, search]);
 
   const isLoading = loadingResponses || loadingForm;
+
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      await formsApi.downloadResponsesCsv(formId);
+      toast.success("CSV export downloaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to export responses.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -104,15 +121,28 @@ export default function ResponsesPage() {
 
         {/* Search for Default Table */}
         {activeTab === "default" && (
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search response ID..."
-              aria-label="Search responses by response ID"
-              className="h-8.5 pl-8 text-xs bg-secondary/30 border-border focus-visible:ring-1 focus-visible:ring-[hsl(var(--mocha-mauve))]"
-            />
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="relative min-w-0 flex-1 sm:w-64">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search response ID..."
+                aria-label="Search responses by response ID"
+                className="h-8.5 pl-8 text-xs bg-secondary/30 border-border focus-visible:ring-1 focus-visible:ring-[hsl(var(--mocha-mauve))]"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportCsv}
+              disabled={isExporting || totalSubmissions === 0}
+              className="h-8.5 shrink-0 gap-1.5 border-border bg-secondary/30 text-xs font-bold hover:bg-[hsl(var(--mocha-mauve))] hover:text-[hsl(var(--mocha-crust))]"
+            >
+              {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              Export CSV
+            </Button>
           </div>
         )}
       </div>
@@ -314,4 +344,3 @@ export default function ResponsesPage() {
     </div>
   );
 }
-
