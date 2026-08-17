@@ -83,7 +83,7 @@ export default function FormDetailsLayout({
       <div className="space-y-3">
         {/* Breadcrumb: Forms / Current Form */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-          <Link href="/" className="hover:text-[hsl(var(--mocha-mauve))] transition-colors font-medium">
+          <Link href="/dashboard" className="hover:text-[hsl(var(--mocha-mauve))] transition-colors font-medium">
             Forms
           </Link>
           <ChevronRight className="h-3 w-3 text-muted-foreground/60" />

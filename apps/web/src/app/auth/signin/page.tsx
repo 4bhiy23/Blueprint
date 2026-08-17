@@ -51,7 +51,7 @@ export default function SignInPage() {
         description: "Successfully signed in to Blueprint.",
         duration: 3000,
       });
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred.");
       setLoading(false);
@@ -65,7 +65,7 @@ export default function SignInPage() {
       toast.info("Connecting to Google authentication...");
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: "/dashboard",
       });
     } catch (err: any) {
       toast.error(err?.message || "Social login initialization failed.");

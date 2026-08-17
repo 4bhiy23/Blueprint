@@ -60,7 +60,7 @@ export default function SignUpPage() {
         description: "Welcome to Blueprint! Redirecting to dashboard...",
         duration: 3000,
       });
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred.");
       setLoading(false);
@@ -73,7 +73,7 @@ export default function SignUpPage() {
       toast.info("Connecting to Google authentication...");
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: "/dashboard",
       });
     } catch (err: any) {
       toast.error(err?.message || "Social login initialization failed.");

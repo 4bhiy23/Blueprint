@@ -100,7 +100,7 @@ export function TopNav({
       <div className="flex items-center gap-3 min-w-0">
         {/* Blueprint logo mark */}
         <Link
-          href="/"
+          href="/dashboard"
           aria-label="Go to dashboard"
           className="flex items-center gap-2 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >

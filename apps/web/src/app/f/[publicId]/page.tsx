@@ -240,7 +240,7 @@ export default function PublicFormResponderPage() {
         />
         <div className="relative z-10 text-center max-w-md bg-card border border-border p-8 rounded-3xl shadow-2xl animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-[hsl(var(--mocha-green))/0.15] border border-[hsl(var(--mocha-green))/0.3] text-[hsl(var(--mocha-green))] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="h-8 w-8 stroke-[3]" />
+            <Check className="h-8 w-8 stroke-3" />
           </div>
           <h2 className="text-2xl font-black text-foreground mb-2 tracking-tight">Response Submitted!</h2>
           <p className="text-muted-foreground text-xs mb-6 leading-relaxed">
@@ -263,12 +263,12 @@ export default function PublicFormResponderPage() {
       />
 
       {/* Main Card Container */}
-      <Card className="relative z-10 w-full max-w-lg bg-card border-border shadow-2xl rounded-2xl p-6 md:p-8 flex flex-col min-h-[420px] justify-between">
+      <Card className="relative z-10 w-full max-w-lg bg-card border-border shadow-2xl rounded-2xl p-6 md:p-8 flex flex-col min-h-105 justify-between">
         
         {/* Top Progress Info */}
         <div className="mb-6">
           <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 font-mono">
-            <span className="truncate max-w-[200px]">{form.title}</span>
+            <span className="truncate max-w-50">{form.title}</span>
             <span className="bg-[hsl(var(--mocha-mauve))/0.15] text-[hsl(var(--mocha-mauve))] border border-[hsl(var(--mocha-mauve))/0.3] px-2.5 py-0.5 rounded-full text-[10px]">
               QUESTION {currentIndex + 1} OF {totalQuestions}
             </span>
@@ -452,7 +452,7 @@ export default function PublicFormResponderPage() {
                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
                           isChecked ? "border-[hsl(var(--mocha-mauve))] bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))]" : "border-border"
                         }`}>
-                          {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                          {isChecked && <Check className="h-3 w-3 stroke-3" />}
                         </div>
                       </button>
                     );

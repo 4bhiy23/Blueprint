@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
   ArrowRight, 
-  ArrowUpDown, 
   BarChart2, 
   Eye, 
   Inbox, 
@@ -36,7 +35,6 @@ export default function ResponsesPage() {
   // View switch: "default" (original submissions table) vs "questions" (per-question carousel)
   const [activeTab, setActiveTab] = useState<"default" | "questions">("default");
   const [search, setSearch] = useState("");
-  const [sortAscending, setSortAscending] = useState(false);
 
   // Question Carousel state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -44,13 +42,15 @@ export default function ResponsesPage() {
   // Filtered and sorted responder rows for default table
   const responsesList = useMemo(() => {
     if (!responsesData) return [];
+    const query = search.trim().toLowerCase();
+
     return responsesData.responses
-      .filter((resp) => resp.id.toLowerCase().includes(search.toLowerCase()))
+      .filter((response) => response.id.toLowerCase().includes(query))
       .sort((left, right) => {
         const difference = new Date(left.submittedAt).getTime() - new Date(right.submittedAt).getTime();
-        return sortAscending ? difference : -difference;
+        return -difference;
       });
-  }, [responsesData, search, sortAscending]);
+  }, [responsesData, search]);
 
   const isLoading = loadingResponses || loadingForm;
 
@@ -109,7 +109,8 @@ export default function ResponsesPage() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by Response ID..."
+              placeholder="Search response ID..."
+              aria-label="Search responses by response ID"
               className="h-8.5 pl-8 text-xs bg-secondary/30 border-border focus-visible:ring-1 focus-visible:ring-[hsl(var(--mocha-mauve))]"
             />
           </div>
@@ -140,12 +141,7 @@ export default function ResponsesPage() {
                       Response ID
                     </TableHead>
                     <TableHead className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <button
-                        onClick={() => setSortAscending((prev) => !prev)}
-                        className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer"
-                      >
-                        Submitted At <ArrowUpDown className="h-3 w-3 text-[hsl(var(--mocha-mauve))]" />
-                      </button>
+                      Submitted At
                     </TableHead>
                     <TableHead className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Completion Time
@@ -318,5 +314,4 @@ export default function ResponsesPage() {
     </div>
   );
 }
-
 

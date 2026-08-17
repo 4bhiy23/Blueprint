@@ -110,7 +110,7 @@ export default function DashboardLayout({
 
   // Global top-navigation links
   const navLinks = [
-    { label: "Dashboard", href: "/", Icon: LayoutDashboard },
+    { label: "Dashboard", href: "/dashboard", Icon: LayoutDashboard },
   ];
 
   return (
@@ -118,10 +118,10 @@ export default function DashboardLayout({
       {/* ─────────────────────────────────────────────────────────────
          GLOBAL TOP NAVIGATION BAR
          ───────────────────────────────────────────────────────────── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-[hsl(var(--card))] px-4 md:px-6 z-30">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-30">
         {/* Left: Brand Logo & Links */}
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] shadow-md group-hover:scale-105 transition-transform">
               <LayoutGrid className="h-4 w-4 stroke-[2.5]" />
             </div>
@@ -134,8 +134,8 @@ export default function DashboardLayout({
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive =
-                link.href === "/"
-                  ? pathname === "/"
+                link.href === "/dashboard"
+                  ? pathname === "/dashboard"
                   : pathname.startsWith(link.href) && !pathname.startsWith("/forms");
               return (
                 <Link key={link.label} href={link.href}>
