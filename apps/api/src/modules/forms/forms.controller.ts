@@ -21,22 +21,23 @@ import {
   CreateFormSchema,
   UpdateFormSchema,
 } from "@repo/validators";
+import {
+  getRouteParam,
+  requireAuthenticatedUser,
+  requireFormId,
+} from "./forms.controller-helpers.js";
+
+export function getFormId(req: Request) {
+  return getRouteParam(req, "id");
+}
 
 function getUserId(req: Request) {
   return req.user?.id;
 }
 
-export function getFormId(req: Request) {
-  const { id } = req.params;
-  return Array.isArray(id) ? id[0] : id;
-}
-
 export async function createForm(req: Request, res: Response) {
-  const userId = getUserId(req);
-
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
 
   const parsed = CreateFormSchema.safeParse(req.body ?? {});
 
@@ -57,11 +58,8 @@ export async function createForm(req: Request, res: Response) {
 }
 
 export async function listForms(req: Request, res: Response) {
-  const userId = getUserId(req);
-
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
 
   const forms = await listFormsForUser(userId);
 
@@ -69,17 +67,10 @@ export async function listForms(req: Request, res: Response) {
 }
 
 export async function getForm(req: Request, res: Response) {
-  const userId = getUserId(req);
-
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const formId = getFormId(req);
-
-  if (!formId) {
-    return res.status(400).json({ error: "Invalid form id" });
-  }
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
+  const formId = requireFormId(req, res);
+  if (!formId) return;
 
   const result = await getFormForUser({
     userId,
@@ -94,17 +85,10 @@ export async function getForm(req: Request, res: Response) {
 }
 
 export async function getFormAnalytics(req: Request, res: Response) {
-  const userId = getUserId(req);
-
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const formId = getFormId(req);
-
-  if (!formId) {
-    return res.status(400).json({ error: "Invalid form id" });
-  }
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
+  const formId = requireFormId(req, res);
+  if (!formId) return;
 
   const analytics = await getFormAnalyticsForUser({ userId, formId });
 
@@ -116,11 +100,10 @@ export async function getFormAnalytics(req: Request, res: Response) {
 }
 
 export async function listResponses(req: Request, res: Response) {
-  const userId = getUserId(req);
-  const formId = getFormId(req);
-
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  if (!formId) return res.status(400).json({ error: "Invalid form id" });
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
+  const formId = requireFormId(req, res);
+  if (!formId) return;
 
   const result = await listResponsesForUser({ userId, formId });
   if (!result) return res.status(404).json({ error: "Form not found" });
@@ -146,11 +129,10 @@ function toExportFilename(title: string) {
 }
 
 export async function exportResponsesCsv(req: Request, res: Response) {
-  const userId = getUserId(req);
-  const formId = getFormId(req);
-
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  if (!formId) return res.status(400).json({ error: "Invalid form id" });
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
+  const formId = requireFormId(req, res);
+  if (!formId) return;
 
   const result = await getResponsesCsvExportForUser({ userId, formId });
   if (!result) return res.status(404).json({ error: "Form not found" });
@@ -189,20 +171,19 @@ export async function exportResponsesCsv(req: Request, res: Response) {
 }
 
 export async function getResponse(req: Request, res: Response) {
-  const userId = getUserId(req);
-  const formId = getFormId(req);
-  const { responseId } = req.params;
-  const normalizedResponseId = Array.isArray(responseId) ? responseId[0] : responseId;
+  const userId = requireAuthenticatedUser(req, res);
+  if (!userId) return;
+  const formId = requireFormId(req, res);
+  const responseId = getRouteParam(req, "responseId");
 
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  if (!formId || !normalizedResponseId) {
+  if (!formId || !responseId) {
     return res.status(400).json({ error: "Invalid response id" });
   }
 
   const result = await getResponseForUser({
     userId,
     formId,
-    responseId: normalizedResponseId,
+    responseId,
   });
   if (!result) return res.status(404).json({ error: "Response not found" });
 

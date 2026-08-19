@@ -9,5 +9,6 @@
     "target": "ES2022",
     "strict": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/seed-dummy.ts"]
 }

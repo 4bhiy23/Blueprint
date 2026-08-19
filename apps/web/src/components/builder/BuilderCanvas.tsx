@@ -8,13 +8,13 @@ import {
   Controls,
   MiniMap,
   addEdge,
-  useNodesState,
-  useEdgesState,
   useReactFlow,
   type OnConnect,
   type NodeTypes,
   type EdgeTypes,
   type Node,
+  type OnEdgesChange,
+  type OnNodesChange,
 } from "@xyflow/react";
 import { useDroppable } from "@dnd-kit/core";
 import "@xyflow/react/dist/style.css";
@@ -33,7 +33,6 @@ import {
 } from "./types";
 
 /* ─── Custom node & edge type maps ─────────────────────────────────────── */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = {
   // Cast through unknown because @xyflow/react's internal NodeTypes expects
   // NodeProps<Node<Record<string,unknown>>> but our custom nodes use the
@@ -68,8 +67,8 @@ function minimapNodeColor(node: Node) {
 export interface BuilderCanvasProps {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
-  onNodesChange: any;
-  onEdgesChange: any;
+  onNodesChange: OnNodesChange<BuilderNode>;
+  onEdgesChange: OnEdgesChange<BuilderEdge>;
   onNodeSelect: (nodeId: string | null, data: QuestionNodeData | null) => void;
   onAddNode: (node: BuilderNode) => void;
   readOnly?: boolean;
@@ -123,9 +122,9 @@ export function BuilderCanvas({
       )}
     >
       <ReactFlow
-        nodes={nodes as Node[]}
+        nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange as ReturnType<typeof useNodesState<Node>>[2]}
+        onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={readOnly ? undefined : onConnect}
         onNodeClick={handleNodeClick}

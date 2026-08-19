@@ -53,7 +53,6 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use("/api/v2", router);
 
-
 // Global error handler
 app.use((req, res) => {
   res.status(404).json({
@@ -62,7 +61,6 @@ app.use((req, res) => {
 });
 
 app.use(errorHandler);
-
 
 app.listen(apiEnv.PORT, () => {
   logger.info(`API server running on PORT: ${apiEnv.PORT}`);

@@ -34,12 +34,12 @@ import {
   type QuestionNodeData,
   type QuestionType,
   type QuestionOption,
-  type QuestionFlowNode,
   QUESTION_TYPE_META,
   CANVAS_DROP_ZONE_ID,
   START_NODE_ID,
   SUBMIT_NODE_ID,
 } from "./types";
+import { serializeBuilder } from "./builder-serialization";
 
 // ─── Safe UUID generator ───────────────────────────────────────────────────
 function generateUUID(): string {
@@ -210,43 +210,13 @@ function FormBuilderInner() {
     }
   }, [builderQuery.error, formQuery.error]);
 
-  // Helper: Serialize React Flow nodes and edges to Backend schema
-  const serializeToBackend = useCallback((currentNodes: BuilderNode[], currentEdges: any[]): BuilderData => {
-    const questionNodes = currentNodes.filter((n) => n.type === "question") as QuestionFlowNode[];
-    const serializedNodes = questionNodes.map((n) => ({
-      id: n.id,
-      type: n.data.questionType,
-      position: n.position,
-      data: {
-        title: n.data.title || "Untitled Question",
-        description: n.data.description || "",
-        required: !!n.data.required,
-        options: n.data.options || [],
-        ratingMax: n.data.ratingMax ?? 5,
-        ratingLowLabel: n.data.ratingLowLabel ?? "",
-        ratingHighLabel: n.data.ratingHighLabel ?? "",
-      },
-    }));
-
-    // Filter out edges containing virtual nodes __start__ or __submit__
-    const questionEdges = currentEdges.filter(
-      (e) => e.source !== START_NODE_ID && e.target !== SUBMIT_NODE_ID
-    );
-    const serializedEdges = questionEdges.map((e) => ({
-      source: e.source,
-      target: e.target,
-    }));
-
-    return {
-      nodes: serializedNodes,
-      edges: serializedEdges,
-      viewport: rfInstance.getViewport(),
-    };
+  const serializeToBackend = useCallback((currentNodes: BuilderNode[], currentEdges: BuilderEdge[]): BuilderData => {
+    return serializeBuilder(currentNodes, currentEdges, rfInstance.getViewport());
   }, [rfInstance]);
 
   // 2. Debounced API Autosave Graph
   const debouncedSaveGraph = useDebouncedCallback(
-    async (currentNodes: BuilderNode[], currentEdges: any[]) => {
+    async (currentNodes: BuilderNode[], currentEdges: BuilderEdge[]) => {
       if (isReadOnly) return;
 
       try {

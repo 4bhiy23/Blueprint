@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/api";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -52,8 +53,8 @@ export default function SignInPage() {
         duration: 3000,
       });
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err?.message || "An unexpected error occurred.");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "An unexpected error occurred."));
       setLoading(false);
     }
   }
@@ -67,8 +68,8 @@ export default function SignInPage() {
         provider: "google",
         callbackURL: "/dashboard",
       });
-    } catch (err: any) {
-      toast.error(err?.message || "Social login initialization failed.");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Social login initialization failed."));
       setGoogleLoading(false);
     }
   };
