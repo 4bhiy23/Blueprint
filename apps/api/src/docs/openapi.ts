@@ -36,12 +36,15 @@
  *     FormStatus:
  *       type: string
  *       enum: [draft, published, closed, archived]
+ *     FormAvailabilityStatus:
+ *       type: string
+ *       enum: [accepting, not_open_yet, expired, response_limit_reached, closed, draft, archived]
  *     QuestionType:
  *       type: string
  *       enum: [text, number, email, select, radio, checkbox, paragraph, date, datetime, time, rating]
  *     Form:
  *       type: object
- *       required: [id, ownerId, title, status, publicId, createdAt]
+ *       required: [id, ownerId, title, status, publicId, acceptMultipleResponses, createdAt]
  *       properties:
  *         id:
  *           type: string
@@ -57,6 +60,23 @@
  *           $ref: '#/components/schemas/FormStatus'
  *         publicId:
  *           type: string
+ *         opensAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *         expiresAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *         responseLimit:
+ *           type: integer
+ *           minimum: 1
+ *           nullable: true
+ *         acceptMultipleResponses:
+ *           type: boolean
+ *           default: true
+ *         availabilityStatus:
+ *           $ref: '#/components/schemas/FormAvailabilityStatus'
  *         firstQuestionId:
  *           type: string
  *           format: uuid
@@ -291,6 +311,20 @@
  *           maxLength: 2000
  *         status:
  *           $ref: '#/components/schemas/FormStatus'
+ *         opensAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *         expiresAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *         responseLimit:
+ *           type: integer
+ *           minimum: 1
+ *           nullable: true
+ *         acceptMultipleResponses:
+ *           type: boolean
  *     FormDetailsResponse:
  *       type: object
  *       required: [form, questions]
@@ -303,8 +337,20 @@
  *             $ref: '#/components/schemas/Question'
  *     PublicFormResponse:
  *       type: object
- *       required: [form, questions]
+ *       required: [alreadySubmitted, availabilityStatus]
  *       properties:
+ *         alreadySubmitted:
+ *           type: boolean
+ *         availabilityStatus:
+ *           $ref: '#/components/schemas/FormAvailabilityStatus'
+ *         opensAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *         expiresAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
  *         form:
  *           $ref: '#/components/schemas/PublicForm'
  *         questions:
@@ -433,12 +479,12 @@
  * /public/forms/{publicId}:
  *   get:
  *     tags: [Public Forms]
- *     summary: Get a published form for a responder
+ *     summary: Get a public form or its availability state for a responder
  *     parameters:
  *       - $ref: '#/components/parameters/PublicId'
  *     responses:
  *       '200':
- *         description: Published form and its ordered questions
+ *         description: Published form and its ordered questions, or an unavailable/already-submitted state.
  *         content:
  *           application/json:
  *             schema:
@@ -446,7 +492,7 @@
  *       '400':
  *         $ref: '#/components/responses/InvalidRequest'
  *       '404':
- *         description: Published form not found
+ *         description: Form not found
  * /public/forms/{publicId}/responses:
  *   post:
  *     tags: [Public Forms]
@@ -474,6 +520,18 @@
  *               $ref: '#/components/schemas/ErrorResponse'
  *       '404':
  *         description: Published form not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '409':
+ *         description: The responder has already submitted this form
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '410':
+ *         description: The form is unavailable because it is closed, expired, scheduled for later, or has reached its response limit
  *         content:
  *           application/json:
  *             schema:
