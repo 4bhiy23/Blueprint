@@ -4,6 +4,8 @@ import {
   text,
   timestamp,
   jsonb,
+  integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { formStatusEnum } from "./enums.js";
 import { user } from "./auth.js";
@@ -34,6 +36,16 @@ export const forms = pgTable("forms", {
     .notNull()
 
     .unique(),
+
+  opensAt: timestamp("opens_at"),
+
+  expiresAt: timestamp("expires_at"),
+
+  responseLimit: integer("response_limit"),
+
+  acceptMultipleResponses: boolean("accept_multiple_responses")
+    .notNull()
+    .default(true),
 
   createdAt: timestamp("created_at")
     .defaultNow()

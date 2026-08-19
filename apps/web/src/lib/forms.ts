@@ -1,6 +1,6 @@
-import type { FormStatus, QuestionType } from "@repo/validators";
+import type { FormAvailabilityStatus, FormStatus, QuestionType } from "@repo/validators";
 
-export type { FormStatus } from "@repo/validators";
+export type { FormAvailabilityStatus, FormStatus } from "@repo/validators";
 export const FORM_UPDATED_EVENT = "blueprint:form-updated";
 
 export interface FormRecord {
@@ -9,6 +9,11 @@ export interface FormRecord {
   description: string | null;
   status: FormStatus;
   publicId: string;
+  opensAt: string | null;
+  expiresAt: string | null;
+  responseLimit: number | null;
+  acceptMultipleResponses: boolean;
+  availabilityStatus?: FormAvailabilityStatus;
   createdAt: string;
   responseCount?: number;
 }

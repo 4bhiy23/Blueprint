@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, Check, Loader2, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,47 @@ export default function PublicFormResponderPage() {
     );
   }
 
-  if (!formQuery.data || !formQuery.data.questions.length) {
+  if (formQuery.data?.alreadySubmitted) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: `radial-gradient(hsl(var(--mocha-mauve)) 1px, transparent 1px)`, backgroundSize: "24px 24px" }} />
+        <div className="relative z-10 max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+          <Check className="mx-auto mb-4 h-9 w-9 text-[hsl(var(--mocha-green))]" />
+          <h2 className="text-xl font-bold text-foreground">Response already submitted</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">This form accepts one response per responder.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (formQuery.data && formQuery.data.availabilityStatus !== "accepting") {
+    const { availabilityStatus, opensAt, expiresAt } = formQuery.data;
+    const message = availabilityStatus === "not_open_yet"
+      ? `This form opens at ${new Date(opensAt as string).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.`
+      : availabilityStatus === "expired"
+        ? `This form closed at ${new Date(expiresAt as string).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.`
+        : availabilityStatus === "response_limit_reached"
+          ? "This form has reached its response limit."
+          : availabilityStatus === "closed"
+            ? "This form is closed and is no longer accepting responses."
+            : availabilityStatus === "archived"
+              ? "This form has been archived and is unavailable."
+              : "This form has not been published yet.";
+    const heading = availabilityStatus === "closed" ? "Form closed" : "Form unavailable";
+
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: `radial-gradient(hsl(var(--mocha-mauve)) 1px, transparent 1px)`, backgroundSize: "24px 24px" }} />
+        <div className="relative z-10 max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+          <CalendarClock className="mx-auto mb-4 h-9 w-9 text-[hsl(var(--mocha-peach))]" />
+          <h2 className="text-xl font-bold text-foreground">{heading}</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!formQuery.data || !formQuery.data.questions?.length) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div 
@@ -78,7 +118,7 @@ export default function PublicFormResponderPage() {
     );
   }
 
-  const { form, questions } = formQuery.data;
+  const { form, questions } = formQuery.data as Required<typeof formQuery.data>;
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
   const isFirst = currentIndex === 0;

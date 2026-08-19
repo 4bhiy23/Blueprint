@@ -24,6 +24,15 @@ export const FormStatusSchema = z.enum([
   "closed",
   "archived",
 ]);
+export const FormAvailabilityStatusSchema = z.enum([
+  "accepting",
+  "not_open_yet",
+  "expired",
+  "response_limit_reached",
+  "closed",
+  "draft",
+  "archived",
+]);
 
 const trimmedText = (max = 1000) =>
   z.string().trim().min(1).max(max);
@@ -36,6 +45,10 @@ export const FormSchema = z
     description: z.string().trim().max(2000).nullable(),
     status: FormStatusSchema,
     publicId: z.string(),
+    opensAt: z.string().datetime({ offset: true }).nullable(),
+    expiresAt: z.string().datetime({ offset: true }).nullable(),
+    responseLimit: z.number().int().positive().nullable(),
+    acceptMultipleResponses: z.boolean(),
     createdAt: z.string().or(z.date()),
   })
   .strict();
@@ -49,6 +62,18 @@ export const CreateFormSchema = z
 
 export const UpdateFormSchema = CreateFormSchema.extend({
   status: FormStatusSchema.optional(),
+  opensAt: z.string().datetime({ offset: true }).nullable().optional(),
+  expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+  responseLimit: z.number().int().positive().nullable().optional(),
+  acceptMultipleResponses: z.boolean().optional(),
+}).superRefine((data, context) => {
+  if (data.opensAt && data.expiresAt && new Date(data.opensAt) >= new Date(data.expiresAt)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["expiresAt"],
+      message: "The closing time must be after the opening time.",
+    });
+  }
 });
 
 export const BuilderPositionSchema = z
@@ -160,5 +185,6 @@ export type BuilderInput = z.infer<typeof BuilderSchema>;
 export type SubmitAnswerInput = z.infer<typeof SubmitAnswerSchema>;
 export type SubmitResponseInput = z.infer<typeof SubmitResponseSchema>;
 export type FormStatus = z.infer<typeof FormStatusSchema>;
+export type FormAvailabilityStatus = z.infer<typeof FormAvailabilityStatusSchema>;
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 export type QuestionOptionType = z.infer<typeof QuestionOptionTypeSchema>;

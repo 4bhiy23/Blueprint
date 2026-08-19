@@ -15,6 +15,7 @@ import {
 } from "@repo/db";
 import type {
   BuilderInput,
+  FormAvailabilityStatus,
   SubmitAnswerInput,
   UpdateFormInput,
 } from "@repo/validators";
@@ -76,10 +77,55 @@ export class SubmissionValidationError extends Error {
   }
 }
 
+export class FormUnavailableError extends Error {
+  constructor(public readonly availabilityStatus: Exclude<FormAvailabilityStatus, "accepting">) {
+    const messages: Record<Exclude<FormAvailabilityStatus, "accepting">, string> = {
+      not_open_yet: "This form is not accepting responses yet.",
+      expired: "This form has expired.",
+      response_limit_reached: "This form has reached its response limit.",
+      closed: "This form is closed.",
+      draft: "This form has not been published yet.",
+      archived: "This form has been archived and is unavailable.",
+    };
+    super(messages[availabilityStatus]);
+    this.name = "FormUnavailableError";
+  }
+}
+
+export class DuplicateResponseError extends Error {
+  constructor() {
+    super("You have already submitted a response to this form.");
+    this.name = "DuplicateResponseError";
+  }
+}
+
+export function getAvailabilityStatus(
+  form: Pick<typeof forms.$inferSelect, "status" | "opensAt" | "expiresAt" | "responseLimit">,
+  responseCount: number,
+  now = new Date(),
+): FormAvailabilityStatus {
+  if (form.status === "closed") return "closed";
+  if (form.status === "archived") return "archived";
+  if (form.status === "draft") return "draft";
+  if (form.opensAt && form.opensAt > now) return "not_open_yet";
+  if (form.expiresAt && form.expiresAt <= now) return "expired";
+  if (form.responseLimit !== null && responseCount >= form.responseLimit) {
+    return "response_limit_reached";
+  }
+  return "accepting";
+}
+
 export class FormEditingLockedError extends Error {
   constructor() {
     super("Published forms cannot be edited. Close the form before making changes.");
     this.name = "FormEditingLockedError";
+  }
+}
+
+export class FormSettingsValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FormSettingsValidationError";
   }
 }
 
@@ -250,6 +296,7 @@ export async function listFormsForUser(userId: string) {
   return userForms.map((form) => ({
     ...form,
     responseCount: responseCounts.get(form.id) ?? 0,
+    availabilityStatus: getAvailabilityStatus(form, responseCounts.get(form.id) ?? 0),
   }));
 }
 
@@ -309,6 +356,7 @@ export async function getFormForUser(input: {
     form: {
       ...form,
       responseCount: responseCounts.get(form.id) ?? 0,
+      availabilityStatus: getAvailabilityStatus(form, responseCounts.get(form.id) ?? 0),
     },
     questions: formQuestions.map((question) =>
       serializeFormQuestion(question, formOptions),
@@ -553,17 +601,38 @@ export async function getResponseForUser(input: {
   };
 }
 
-export async function getPublicFormForResponder(publicId: string) {
+export async function getPublicFormForResponder(publicId: string, ipHash?: string) {
   const form = await db.query.forms.findFirst({
-    where: (formsTable, { and, eq }) =>
-      and(
-        eq(formsTable.publicId, publicId),
-        eq(formsTable.status, "published"),
-      ),
+    where: (formsTable, { eq }) => eq(formsTable.publicId, publicId),
   });
 
   if (!form) {
     return null;
+  }
+
+  const responseCounts = await getResponseCountsByFormId([form.id]);
+  const availabilityStatus = getAvailabilityStatus(form, responseCounts.get(form.id) ?? 0);
+  if (availabilityStatus !== "accepting") {
+    return {
+      alreadySubmitted: false as const,
+      availabilityStatus,
+      opensAt: form.opensAt,
+      expiresAt: form.expiresAt,
+    };
+  }
+
+  const alreadySubmitted = !form.acceptMultipleResponses && ipHash
+    ? await db.query.responses.findFirst({
+        where: (responsesTable, { and, eq }) => and(
+          eq(responsesTable.formId, form.id),
+          eq(responsesTable.ipHash, ipHash),
+        ),
+        columns: { id: true },
+      })
+    : null;
+
+  if (alreadySubmitted) {
+    return { alreadySubmitted: true as const, availabilityStatus: "accepting" as const };
   }
 
   const formQuestions = await db.query.questions.findMany({
@@ -579,6 +648,8 @@ export async function getPublicFormForResponder(publicId: string) {
       })
     : [];
   return {
+    alreadySubmitted: false as const,
+    availabilityStatus: "accepting" as const,
     form: {
       id: form.id,
       publicId: form.publicId,
@@ -612,15 +683,29 @@ export async function submitResponseForPublicForm(input: {
   userAgent?: string | null;
 }) {
   const form = await db.query.forms.findFirst({
-    where: (formsTable, { and, eq }) =>
-      and(
-        eq(formsTable.publicId, input.publicId),
-        eq(formsTable.status, "published"),
-      ),
+    where: (formsTable, { eq }) => eq(formsTable.publicId, input.publicId),
   });
 
   if (!form) {
     return null;
+  }
+
+  const responseCounts = await getResponseCountsByFormId([form.id]);
+  const availabilityStatus = getAvailabilityStatus(form, responseCounts.get(form.id) ?? 0);
+  if (availabilityStatus !== "accepting") {
+    throw new FormUnavailableError(availabilityStatus);
+  }
+
+  const ipHash = input.ipHash;
+  if (!form.acceptMultipleResponses && ipHash) {
+    const existingResponse = await db.query.responses.findFirst({
+      where: (responsesTable, { and, eq }) => and(
+        eq(responsesTable.formId, form.id),
+        eq(responsesTable.ipHash, ipHash),
+      ),
+      columns: { id: true },
+    });
+    if (existingResponse) throw new DuplicateResponseError();
   }
 
   const formQuestions = await db.query.questions.findMany({
@@ -764,6 +849,38 @@ export async function submitResponseForPublicForm(input: {
   }
 
   return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${form.id}))`);
+
+    const [responseCount] = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(responses)
+      .where(eq(responses.formId, form.id));
+
+    const lockedForm = await tx.query.forms.findFirst({
+      where: (formsTable, { eq }) => eq(formsTable.id, form.id),
+    });
+
+    if (!lockedForm) return null;
+
+    const lockedAvailability = getAvailabilityStatus(
+      lockedForm,
+      Number(responseCount.count),
+    );
+    if (lockedAvailability !== "accepting") {
+      throw new FormUnavailableError(lockedAvailability);
+    }
+
+    if (!lockedForm.acceptMultipleResponses && ipHash) {
+      const existingResponse = await tx.query.responses.findFirst({
+        where: (responsesTable, { and, eq }) => and(
+          eq(responsesTable.formId, lockedForm.id),
+          eq(responsesTable.ipHash, ipHash),
+        ),
+        columns: { id: true },
+      });
+      if (existingResponse) throw new DuplicateResponseError();
+    }
+
     const [response] = await tx
       .insert(responses)
       .values({
@@ -837,6 +954,28 @@ export async function updateFormForUser(input: {
     throw new FormEditingLockedError();
   }
 
+  const opensAt = input.opensAt !== undefined
+    ? (input.opensAt ? new Date(input.opensAt) : null)
+    : existingForm.opensAt;
+  const expiresAt = input.expiresAt !== undefined
+    ? (input.expiresAt ? new Date(input.expiresAt) : null)
+    : existingForm.expiresAt;
+
+  if (opensAt && expiresAt && opensAt >= expiresAt) {
+    throw new FormSettingsValidationError(
+      "The closing time must be after the opening time.",
+    );
+  }
+
+  if (input.responseLimit !== undefined && input.responseLimit !== null) {
+    const responseCounts = await getResponseCountsByFormId([existingForm.id]);
+    if (input.responseLimit < (responseCounts.get(existingForm.id) ?? 0)) {
+      throw new FormSettingsValidationError(
+        "The response limit cannot be lower than the number of responses already received.",
+      );
+    }
+  }
+
   const [updatedForm] = await db
     .update(forms)
     .set({
@@ -845,6 +984,18 @@ export async function updateFormForUser(input: {
         ? { description: input.description.trim() || null }
         : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.opensAt !== undefined
+        ? { opensAt }
+        : {}),
+      ...(input.expiresAt !== undefined
+        ? { expiresAt }
+        : {}),
+      ...(input.responseLimit !== undefined
+        ? { responseLimit: input.responseLimit }
+        : {}),
+      ...(input.acceptMultipleResponses !== undefined
+        ? { acceptMultipleResponses: input.acceptMultipleResponses }
+        : {}),
     })
     .where(eq(forms.id, existingForm.id))
     .returning();

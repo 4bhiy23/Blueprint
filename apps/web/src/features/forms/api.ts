@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import type {
   BuilderInput,
+  FormAvailabilityStatus,
   QuestionType,
   SubmitResponseInput,
   UpdateFormInput,
@@ -38,8 +39,12 @@ export interface PublicQuestion {
 }
 
 export interface PublicFormResponse {
-  form: PublicForm;
-  questions: PublicQuestion[];
+  alreadySubmitted: boolean;
+  availabilityStatus: FormAvailabilityStatus;
+  opensAt?: string | null;
+  expiresAt?: string | null;
+  form?: PublicForm;
+  questions?: PublicQuestion[];
 }
 
 export type BuilderData = BuilderInput;

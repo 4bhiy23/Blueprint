@@ -6,6 +6,7 @@ import {
   getResponsesCsvExportForUser,
   BuilderValidationError,
   FormEditingLockedError,
+  FormSettingsValidationError,
   getBuilderForUser,
   getFormAnalyticsForUser,
   getFormForUser,
@@ -238,10 +239,17 @@ export async function updateForm(req: Request, res: Response) {
       title: parsed.data.title,
       description: parsed.data.description,
       status: parsed.data.status,
+      opensAt: parsed.data.opensAt,
+      expiresAt: parsed.data.expiresAt,
+      responseLimit: parsed.data.responseLimit,
+      acceptMultipleResponses: parsed.data.acceptMultipleResponses,
     });
   } catch (error) {
     if (error instanceof FormEditingLockedError) {
       return res.status(409).json({ error: error.message });
+    }
+    if (error instanceof FormSettingsValidationError) {
+      return res.status(400).json({ error: error.message });
     }
     throw error;
   }

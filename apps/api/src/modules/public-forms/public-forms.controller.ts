@@ -3,6 +3,8 @@ import type { Request, Response } from "express";
 import { SubmitResponseSchema } from "@repo/validators";
 import {
   getPublicFormForResponder,
+  DuplicateResponseError,
+  FormUnavailableError,
   SubmissionValidationError,
   submitResponseForPublicForm,
 } from "../forms/forms.service.js";
@@ -19,7 +21,8 @@ export async function getPublicForm(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid public form id" });
   }
 
-  const form = await getPublicFormForResponder(publicId);
+  const ipHash = createHash("sha256").update(req.ip ?? "unknown").digest("hex");
+  const form = await getPublicFormForResponder(publicId, ipHash);
 
   if (!form) {
     return res.status(404).json({ error: "Form not found" });
@@ -62,6 +65,14 @@ export async function submitPublicResponse(req: Request, res: Response) {
 
     return res.status(201).json({ response });
   } catch (error) {
+    if (error instanceof FormUnavailableError) {
+      return res.status(410).json({ error: error.message, availabilityStatus: error.availabilityStatus });
+    }
+
+    if (error instanceof DuplicateResponseError) {
+      return res.status(409).json({ error: error.message });
+    }
+
     if (error instanceof SubmissionValidationError) {
       return res.status(400).json({ error: error.message });
     }

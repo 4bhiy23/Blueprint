@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import type { FormRecord, FormStatus } from "@/lib/forms";
+import type { FormAvailabilityStatus, FormRecord, FormStatus } from "@/lib/forms";
 import { useFormMutations, useFormsQuery } from "@/features/forms/queries";
 
 interface FormCardData {
@@ -49,6 +49,7 @@ interface FormCardData {
   title: string;
   description: string;
   status: FormStatus;
+  availabilityStatus?: FormAvailabilityStatus;
   responseCount: number;
   createdAt: string;
   createdLabel: string;
@@ -75,6 +76,7 @@ function toFormCard(form: FormRecord): FormCardData {
     title: form.title,
     description: form.description ?? "",
     status: form.status,
+    availabilityStatus: form.availabilityStatus,
     responseCount: form.responseCount ?? 0,
     createdAt: form.createdAt,
     createdLabel: formatRelativeDate(form.createdAt),
@@ -373,6 +375,11 @@ export default function DashboardPage() {
                     >
                       {form.status}
                     </Badge>
+                    {form.availabilityStatus && form.availabilityStatus !== "accepting" && form.status === "published" && (
+                      <Badge variant="muted" className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5">
+                        {form.availabilityStatus.replaceAll("_", " ")}
+                      </Badge>
+                    )}
 
                     {/* Quick actions dropdown */}
                     <DropdownMenu>
