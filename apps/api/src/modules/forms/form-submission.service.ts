@@ -359,10 +359,13 @@ export async function submitResponseForPublicForm(input: {
     }
 
     return {
-      id: response.id,
-      formId: response.formId,
-      submittedAt: response.submittedAt,
-      completionMs: response.completionMs,
+      ownerId: form.ownerId,
+      response: {
+        id: response.id,
+        formId: response.formId,
+        submittedAt: response.submittedAt,
+        completionMs: response.completionMs,
+      },
     };
   });
 }

@@ -264,13 +264,11 @@ export async function deleteFormForUser(input: {
       ),
   });
 
-  if (!existingForm) {
-    return false;
-  }
+  if (!existingForm) return null;
 
   await db.delete(forms).where(eq(forms.id, existingForm.id));
 
-  return true;
+  return existingForm;
 }
 
 export async function duplicateFormForUser(input: {

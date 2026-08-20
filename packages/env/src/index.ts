@@ -11,6 +11,8 @@ const apiEnvSchema = z.object({
 
   FRONTEND_URL: z.string().url(),
 
+  REDIS_URL: z.string().url().optional(),
+
   BETTER_AUTH_SECRET: z.string(),
   BETTER_AUTH_URL: z.string()
 });

@@ -14,6 +14,10 @@ import { toNodeHandler } from "better-auth/node";
 
 const app = express();
 
+// Render places the API behind one trusted proxy. This preserves the original
+// visitor IP for public-form duplicate checks and rate limiting.
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,

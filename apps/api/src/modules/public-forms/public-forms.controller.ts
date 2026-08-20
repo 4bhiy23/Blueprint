@@ -1,6 +1,13 @@
-import { createHash } from "node:crypto";
 import type { Request, Response } from "express";
 import { SubmitResponseSchema } from "@repo/validators";
+import { getRequestIpFingerprint } from "../../libs/request-fingerprint.js";
+import {
+  formCacheScope,
+  getOrSetCache,
+  invalidateCacheScope,
+  publicFormCacheScope,
+  userFormsCacheScope,
+} from "../../libs/api-cache.js";
 import {
   getPublicFormForResponder,
   DuplicateResponseError,
@@ -21,8 +28,13 @@ export async function getPublicForm(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid public form id" });
   }
 
-  const ipHash = createHash("sha256").update(req.ip ?? "unknown").digest("hex");
-  const form = await getPublicFormForResponder(publicId, ipHash);
+  const ipHash = getRequestIpFingerprint(req);
+  const form = await getOrSetCache({
+    scope: publicFormCacheScope(publicId),
+    resource: `responder:${ipHash}`,
+    ttlSeconds: 15,
+    load: () => getPublicFormForResponder(publicId, ipHash),
+  });
 
   if (!form) {
     return res.status(404).json({ error: "Form not found" });
@@ -47,11 +59,11 @@ export async function submitPublicResponse(req: Request, res: Response) {
     });
   }
 
-  const ipHash = createHash("sha256").update(req.ip ?? "unknown").digest("hex");
+  const ipHash = getRequestIpFingerprint(req);
   const userAgent = req.get("user-agent") ?? null;
 
   try {
-    const response = await submitResponseForPublicForm({
+    const result = await submitResponseForPublicForm({
       publicId,
       answers: parsed.data.answers,
       completionMs: parsed.data.completionMs,
@@ -59,11 +71,17 @@ export async function submitPublicResponse(req: Request, res: Response) {
       userAgent,
     });
 
-    if (!response) {
+    if (!result) {
       return res.status(404).json({ error: "Form not found" });
     }
 
-    return res.status(201).json({ response });
+    await Promise.all([
+      invalidateCacheScope(publicFormCacheScope(publicId)),
+      invalidateCacheScope(formCacheScope(result.response.formId)),
+      invalidateCacheScope(userFormsCacheScope(result.ownerId)),
+    ]);
+
+    return res.status(201).json({ response: result.response });
   } catch (error) {
     if (error instanceof FormUnavailableError) {
       return res.status(410).json({ error: error.message, availabilityStatus: error.availabilityStatus });

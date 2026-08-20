@@ -26,6 +26,13 @@ import {
   requireAuthenticatedUser,
   requireFormId,
 } from "./forms.controller-helpers.js";
+import {
+  formCacheScope,
+  getOrSetCache,
+  invalidateCacheScope,
+  publicFormCacheScope,
+  userFormsCacheScope,
+} from "../../libs/api-cache.js";
 
 export function getFormId(req: Request) {
   return getRouteParam(req, "id");
@@ -54,6 +61,8 @@ export async function createForm(req: Request, res: Response) {
     description: parsed.data.description,
   });
 
+  await invalidateCacheScope(userFormsCacheScope(userId));
+
   return res.status(201).json({ form });
 }
 
@@ -61,7 +70,12 @@ export async function listForms(req: Request, res: Response) {
   const userId = requireAuthenticatedUser(req, res);
   if (!userId) return;
 
-  const forms = await listFormsForUser(userId);
+  const forms = await getOrSetCache({
+    scope: userFormsCacheScope(userId),
+    resource: "list",
+    ttlSeconds: 30,
+    load: () => listFormsForUser(userId),
+  });
 
   return res.status(200).json({ forms });
 }
@@ -72,9 +86,14 @@ export async function getForm(req: Request, res: Response) {
   const formId = requireFormId(req, res);
   if (!formId) return;
 
-  const result = await getFormForUser({
-    userId,
-    formId,
+  const result = await getOrSetCache({
+    scope: formCacheScope(formId),
+    resource: `owner:${userId}:detail`,
+    ttlSeconds: 60,
+    load: () => getFormForUser({
+      userId,
+      formId,
+    }),
   });
 
   if (!result) {
@@ -90,7 +109,12 @@ export async function getFormAnalytics(req: Request, res: Response) {
   const formId = requireFormId(req, res);
   if (!formId) return;
 
-  const analytics = await getFormAnalyticsForUser({ userId, formId });
+  const analytics = await getOrSetCache({
+    scope: formCacheScope(formId),
+    resource: `owner:${userId}:analytics`,
+    ttlSeconds: 30,
+    load: () => getFormAnalyticsForUser({ userId, formId }),
+  });
 
   if (!analytics) {
     return res.status(404).json({ error: "Form not found" });
@@ -105,7 +129,12 @@ export async function listResponses(req: Request, res: Response) {
   const formId = requireFormId(req, res);
   if (!formId) return;
 
-  const result = await listResponsesForUser({ userId, formId });
+  const result = await getOrSetCache({
+    scope: formCacheScope(formId),
+    resource: `owner:${userId}:responses`,
+    ttlSeconds: 30,
+    load: () => listResponsesForUser({ userId, formId }),
+  });
   if (!result) return res.status(404).json({ error: "Form not found" });
 
   return res.status(200).json(result);
@@ -180,10 +209,15 @@ export async function getResponse(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid response id" });
   }
 
-  const result = await getResponseForUser({
-    userId,
-    formId,
-    responseId,
+  const result = await getOrSetCache({
+    scope: formCacheScope(formId),
+    resource: `owner:${userId}:response:${responseId}`,
+    ttlSeconds: 60,
+    load: () => getResponseForUser({
+      userId,
+      formId,
+      responseId,
+    }),
   });
   if (!result) return res.status(404).json({ error: "Response not found" });
 
@@ -239,6 +273,12 @@ export async function updateForm(req: Request, res: Response) {
     return res.status(404).json({ error: "Form not found" });
   }
 
+  await Promise.all([
+    invalidateCacheScope(userFormsCacheScope(userId)),
+    invalidateCacheScope(formCacheScope(form.id)),
+    invalidateCacheScope(publicFormCacheScope(form.publicId)),
+  ]);
+
   return res.status(200).json({ form });
 }
 
@@ -255,14 +295,20 @@ export async function deleteForm(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid form id" });
   }
 
-  const deleted = await deleteFormForUser({
+  const deletedForm = await deleteFormForUser({
     userId,
     formId,
   });
 
-  if (!deleted) {
+  if (!deletedForm) {
     return res.status(404).json({ error: "Form not found" });
   }
+
+  await Promise.all([
+    invalidateCacheScope(userFormsCacheScope(userId)),
+    invalidateCacheScope(formCacheScope(deletedForm.id)),
+    invalidateCacheScope(publicFormCacheScope(deletedForm.publicId)),
+  ]);
 
   return res.status(200).json({ success: true });
 }
@@ -289,6 +335,8 @@ export async function duplicateForm(req: Request, res: Response) {
     return res.status(404).json({ error: "Form not found" });
   }
 
+  await invalidateCacheScope(userFormsCacheScope(userId));
+
   return res.status(201).json({ form });
 }
 
@@ -305,9 +353,14 @@ export async function getBuilder(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid form id" });
   }
 
-  const builder = await getBuilderForUser({
-    userId,
-    formId,
+  const builder = await getOrSetCache({
+    scope: formCacheScope(formId),
+    resource: `owner:${userId}:builder`,
+    ttlSeconds: 30,
+    load: () => getBuilderForUser({
+      userId,
+      formId,
+    }),
   });
 
   if (!builder) {
@@ -363,6 +416,8 @@ export async function saveBuilder(req: Request, res: Response) {
   if (!builder) {
     return res.status(404).json({ error: "Form not found" });
   }
+
+  await invalidateCacheScope(formCacheScope(formId));
 
   return res.status(200).json(builder);
 }
