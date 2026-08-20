@@ -71,11 +71,15 @@ export default function SignUpPage() {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     try {
-      toast.info("Connecting to Google authentication...");
-      await authClient.signIn.social({
+      const { error: socialError } = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
       });
+
+      if (socialError) {
+        toast.error(socialError.message || "Google sign-up could not start.");
+        setGoogleLoading(false);
+      }
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Social login initialization failed."));
       setGoogleLoading(false);

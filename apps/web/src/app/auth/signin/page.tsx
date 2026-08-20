@@ -62,12 +62,15 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Mock flow if database or better-auth social is unconfigured
-      toast.info("Connecting to Google authentication...");
-      await authClient.signIn.social({
+      const { error: socialError } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: `${window.location.origin}/dashboard`,
       });
+
+      if (socialError) {
+        toast.error(socialError.message || "Google sign-in could not start.");
+        setGoogleLoading(false);
+      }
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Social login initialization failed."));
       setGoogleLoading(false);

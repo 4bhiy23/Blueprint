@@ -48,6 +48,8 @@ NODE_ENV=development
 BETTER_AUTH_SECRET=replace-with-a-long-random-secret
 BETTER_AUTH_URL=http://localhost:4000
 FRONTEND_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 ```
 
 `apps/web/.env.local`
@@ -115,6 +117,17 @@ Use a separate deployment for each app:
 - Use Neon for PostgreSQL.
 
 In production, set `FRONTEND_URL` to the exact web origin and set `BETTER_AUTH_URL` to the API origin. The frontend's `NEXT_PUBLIC_API_URL` must point to that API origin. Run database migrations before deploying code that depends on a schema change.
+
+### Google OAuth
+
+Google OAuth is enabled when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set on the API. In Google Cloud Console, configure an OAuth Web application with these authorized redirect URIs:
+
+```text
+http://localhost:4000/api/auth/callback/google
+https://api.yourdomain.com/api/auth/callback/google
+```
+
+Use the actual API origin for the production URI, not the Vercel frontend origin. Better Auth handles the callback at the API and then redirects the user to the frontend dashboard.
 
 ## Contributing
 
