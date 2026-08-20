@@ -111,6 +111,7 @@ export default function DashboardLayout({
   // Global top-navigation links
   const navLinks = [
     { label: "Dashboard", href: "/dashboard", Icon: LayoutDashboard },
+    { label: "Analytics", href: "/analytics", Icon: LayoutDashboard }
   ];
 
   return (
