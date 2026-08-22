@@ -32,7 +32,7 @@ export async function getPublicForm(req: Request, res: Response) {
   const form = await getOrSetCache({
     scope: publicFormCacheScope(publicId),
     resource: `responder:${ipHash}`,
-    ttlSeconds: 15,
+    ttlSeconds: 60 * 10,
     load: () => getPublicFormForResponder(publicId, ipHash),
   });
 

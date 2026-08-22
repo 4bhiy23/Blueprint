@@ -73,7 +73,7 @@ export async function listForms(req: Request, res: Response) {
   const forms = await getOrSetCache({
     scope: userFormsCacheScope(userId),
     resource: "list",
-    ttlSeconds: 30,
+    ttlSeconds: 60 * 10,
     load: () => listFormsForUser(userId),
   });
 
@@ -89,7 +89,7 @@ export async function getForm(req: Request, res: Response) {
   const result = await getOrSetCache({
     scope: formCacheScope(formId),
     resource: `owner:${userId}:detail`,
-    ttlSeconds: 60,
+    ttlSeconds: 60 * 10,
     load: () => getFormForUser({
       userId,
       formId,
@@ -112,7 +112,7 @@ export async function getFormAnalytics(req: Request, res: Response) {
   const analytics = await getOrSetCache({
     scope: formCacheScope(formId),
     resource: `owner:${userId}:analytics`,
-    ttlSeconds: 30,
+    ttlSeconds: 60 * 10,
     load: () => getFormAnalyticsForUser({ userId, formId }),
   });
 
@@ -132,7 +132,7 @@ export async function listResponses(req: Request, res: Response) {
   const result = await getOrSetCache({
     scope: formCacheScope(formId),
     resource: `owner:${userId}:responses`,
-    ttlSeconds: 30,
+    ttlSeconds: 60 * 10,
     load: () => listResponsesForUser({ userId, formId }),
   });
   if (!result) return res.status(404).json({ error: "Form not found" });
@@ -212,7 +212,7 @@ export async function getResponse(req: Request, res: Response) {
   const result = await getOrSetCache({
     scope: formCacheScope(formId),
     resource: `owner:${userId}:response:${responseId}`,
-    ttlSeconds: 60,
+    ttlSeconds: 60 * 10,
     load: () => getResponseForUser({
       userId,
       formId,
@@ -356,7 +356,7 @@ export async function getBuilder(req: Request, res: Response) {
   const builder = await getOrSetCache({
     scope: formCacheScope(formId),
     resource: `owner:${userId}:builder`,
-    ttlSeconds: 30,
+    ttlSeconds: 60 * 10,
     load: () => getBuilderForUser({
       userId,
       formId,
