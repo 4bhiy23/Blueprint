@@ -91,31 +91,31 @@ export default function ResponsesPage() {
       {/* ─── Header & Top Control Bar ────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-card/60 border border-border rounded-2xl p-4 shadow-lg">
         {/* Navigation Mode Switcher */}
-        <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/80 shrink-0">
+        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-border/80 bg-secondary/50 p-1 sm:flex sm:w-auto sm:gap-0 sm:shrink-0">
           <button
             onClick={() => setActiveTab("default")}
             className={cn(
-              "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+              "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center text-xs font-bold leading-4 transition-all cursor-pointer sm:px-3.5 sm:py-1.5",
               activeTab === "default"
                 ? "bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] shadow-md"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <UserCheck className="h-3.5 w-3.5 stroke-[2.5]" />
-            Default Submissions ({totalSubmissions})
+            <span className="sm:hidden">Submissions ({totalSubmissions})</span><span className="hidden sm:inline">Default Submissions ({totalSubmissions})</span>
           </button>
           
           <button
             onClick={() => setActiveTab("questions")}
             className={cn(
-              "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+              "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center text-xs font-bold leading-4 transition-all cursor-pointer sm:px-3.5 sm:py-1.5",
               activeTab === "questions"
                 ? "bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] shadow-md"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
             <BarChart2 className="h-3.5 w-3.5 stroke-[2.5]" />
-            Question Carousel ({questionsList.length})
+            <span className="sm:hidden">Questions ({questionsList.length})</span><span className="hidden sm:inline">Question Carousel ({questionsList.length})</span>
           </button>
         </div>
 
@@ -239,21 +239,21 @@ export default function ResponsesPage() {
               <p className="text-xs text-muted-foreground">No questions found in this form.</p>
             </Card>
           ) : (
-            <Card className="p-6 bg-card border border-border shadow-xl rounded-2xl space-y-6">
+            <Card className="overflow-hidden space-y-5 rounded-2xl border border-border bg-card p-4 shadow-xl sm:space-y-6 sm:p-6">
               {/* Question Navigation Bar with Left & Right Arrows */}
-              <div className="flex items-center justify-between border-b border-border pb-4 gap-4">
+              <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={currentQuestionIndex === 0}
                   onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
-                  className="h-9 px-3 gap-1.5 border-border text-xs font-bold shrink-0 cursor-pointer"
+                  className="h-10 min-w-0 gap-1.5 border-border px-2 text-xs font-bold cursor-pointer sm:h-9 sm:shrink-0 sm:px-3"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Prev Question
+                  <ArrowLeft className="h-4 w-4 shrink-0" /><span className="sm:hidden">Previous</span><span className="hidden sm:inline">Prev Question</span>
                 </Button>
 
                 {/* Center Question Title & Counter */}
-                <div className="text-center min-w-0">
+                <div className="col-span-2 order-first min-w-0 text-center sm:order-none">
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-[10px] font-mono font-bold text-[hsl(var(--mocha-mauve))] bg-[hsl(var(--mocha-mauve))/0.15] px-2.5 py-0.5 rounded-sm border border-[hsl(var(--mocha-mauve))/0.3]">
                       QUESTION {currentQuestionIndex + 1} OF {questionsList.length}
@@ -279,15 +279,15 @@ export default function ResponsesPage() {
                   size="sm"
                   disabled={currentQuestionIndex === questionsList.length - 1}
                   onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
-                  className="h-9 px-3 gap-1.5 border-border text-xs font-bold shrink-0 cursor-pointer"
+                  className="h-10 min-w-0 gap-1.5 border-border px-2 text-xs font-bold cursor-pointer sm:h-9 sm:shrink-0 sm:px-3"
                 >
-                  Next Question <ArrowRight className="h-4 w-4" />
+                  <span className="sm:hidden">Next</span><span className="hidden sm:inline">Next Question</span><ArrowRight className="h-4 w-4 shrink-0" />
                 </Button>
               </div>
 
               {/* Answers List for Current Question Across All Responders */}
               <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between text-xs font-mono font-bold text-muted-foreground">
+                <div className="flex flex-col gap-2 text-xs font-mono font-bold text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                   <span className="uppercase tracking-wider">
                     Answers for Question #{currentQuestionIndex + 1}
                   </span>
@@ -309,16 +309,16 @@ export default function ResponsesPage() {
                           key={resp.id}
                           className="p-4 rounded-xl bg-secondary/25 border border-border/80 space-y-2 hover:border-border transition-all"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-center gap-2">
                               <span className="text-[10px] font-mono font-bold text-[hsl(var(--mocha-mauve))]">
                                 RESPONDER #{totalSubmissions - rIdx}
                               </span>
-                              <span className="text-[10px] font-mono text-muted-foreground/60 truncate">
+                              <span className="min-w-0 truncate text-[10px] font-mono text-muted-foreground/60">
                                 (ID: {resp.id})
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono text-muted-foreground">
+                            <span className="text-[10px] font-mono text-muted-foreground sm:shrink-0">
                               {new Date(resp.submittedAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
                             </span>
                           </div>

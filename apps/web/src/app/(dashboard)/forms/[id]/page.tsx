@@ -128,10 +128,10 @@ export default function FormOverviewPage() {
           <div className="grid gap-2">
             <Button
               size="sm"
-              className="hidden w-full text-xs font-bold h-9 gap-2 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all md:flex"
+              className="flex w-full text-xs font-bold h-11 gap-2 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all"
               onClick={() => router.push(`/forms/${form.id}/builder`)}
             >
-              Open Builder <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
+              <span className="sm:hidden">Edit form</span><span className="hidden sm:inline">Open Builder</span> <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
             </Button>
 
             {/* Share Public Link Input with Copy & Open Controls */}
@@ -196,7 +196,7 @@ export default function FormOverviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs font-semibold h-9 gap-2 border-[hsl(var(--mocha-green))/0.4] bg-[hsl(var(--mocha-green))/0.1] text-[hsl(var(--mocha-green))] hover:bg-[hsl(var(--mocha-green))/0.2]"
+                className="w-full text-xs font-semibold h-9 gap-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => void updateStatus("published")}
               >
                 <Globe className="h-3.5 w-3.5" /> Publish Form
