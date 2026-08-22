@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint ."
   },
