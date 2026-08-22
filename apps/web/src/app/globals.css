@@ -1,66 +1,56 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────
-   Blueprint Design System — Catppuccin Mocha Theme Tokens
+   Blueprint Design System — Hand-Drawn Blueprint Ink & Paper Theme
+   Strict Dual-Tone: Blueprint Blue (#1D4ED8 / #2563EB) & Ink Black (#111827) on Paper White (#FDFDFC)
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* Base: #1e1e2e (240 21% 15%) */
-  --background: 240 21% 15%;
-  /* Text / Subtext0: #cdd6f4 (226 64% 88%) */
-  --foreground: 226 64% 88%;
+  /* Warm Eye-Friendly Paper White Background (#FAF8F5 / 40 33% 97%) */
+  --background: 40 33% 97%;
+  /* Deep Ink Black Typography & Linework (#0F172A / 222 47% 11%) */
+  --foreground: 222 47% 11%;
 
-  /* Mantle: #181825 (240 23% 12%) */
-  --card: 240 23% 12%;
-  --card-foreground: 226 64% 88%;
+  /* Blueprint Warm Paper Surface (#FFFFFF / 0 0% 100%) */
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
 
-  /* Crust: #11111b (240 23% 9%) */
-  --popover: 240 23% 9%;
-  --popover-foreground: 226 64% 88%;
+  /* Popover / Dialog Canvas */
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
 
-  /* Mauve: #cba6f7 (267 84% 81%) */
-  --primary: 267 84% 81%;
-  --primary-foreground: 240 23% 9%;
+  /* Blueprint Blue Primary Accent (#1D4ED8 / 224 76% 48% or #2563EB / 217 91% 60%) */
+  --primary: 224 76% 48%;
+  --primary-foreground: 0 0% 100%;
 
-  /* Surface0: #313244 (237 16% 23%) */
-  --secondary: 237 16% 23%;
-  --secondary-foreground: 226 64% 88%;
+  /* Soft Blueprint Ink Wash (#EFF6FF / 214 100% 97%) */
+  --secondary: 214 100% 97%;
+  --secondary-foreground: 224 76% 48%;
 
-  /* Surface1: #45475a (235 13% 31%) */
-  --muted: 235 13% 31%;
-  /* Subtext1: #bac2de (227 35% 80%) */
-  --muted-foreground: 227 35% 80%;
+  /* Muted Paper Fill (#F8FAFC / 210 40% 98%) */
+  --muted: 210 40% 98%;
+  --muted-foreground: 215 16% 47%;
 
-  /* Surface2: #585b70 (237 11% 39%) */
-  --accent: 237 11% 39%;
-  --accent-foreground: 226 64% 88%;
+  /* Ink Outline / Hover State */
+  --accent: 214 100% 96%;
+  --accent-foreground: 224 76% 48%;
 
-  /* Red: #f38ba8 (343 81% 75%) */
-  --destructive: 343 81% 75%;
-  --destructive-foreground: 240 23% 9%;
+  /* Destructive Ink Red (#DC2626) */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-  /* Overlay0: #6c7086 (233 11% 48%) */
-  --border: 233 11% 48%;
-  --input: 235 13% 31%;
-  /* Sapphire: #74c7ec (199 76% 69%) */
-  --ring: 199 76% 69%;
+  /* Solid Ink Borders (#0F172A / 222 47% 11%) */
+  --border: 222 47% 11%;
+  --input: 222 47% 11%;
+  --ring: 224 76% 48%;
 
-  /* Catppuccin Specific Flavor Accents */
-  --mocha-rosewater: 10 56% 91%;  /* #f5e0dc */
-  --mocha-flamingo: 0 60% 88%;   /* #f2cdcd */
-  --mocha-pink: 316 73% 84%;     /* #f5c2e7 */
-  --mocha-mauve: 267 84% 81%;    /* #cba6f7 */
-  --mocha-red: 343 81% 75%;      /* #f38ba8 */
-  --mocha-maroon: 350 65% 77%;   /* #eba0ac */
-  --mocha-peach: 23 92% 76%;     /* #fab387 */
-  --mocha-yellow: 41 86% 83%;    /* #f9e2af */
-  --mocha-green: 115 54% 76%;    /* #a6e3a1 */
-  --mocha-teal: 170 57% 73%;     /* #94e2d5 */
-  --mocha-sky: 189 71% 73%;      /* #89dceb */
-  --mocha-sapphire: 199 76% 69%; /* #74c7ec */
-  --mocha-blue: 217 92% 76%;     /* #89b4fa */
-  --mocha-lavender: 245 66% 82%; /* #b4befe */
+  /* Hand-Drawn Blueprint Theme Specific Accents */
+  --blueprint-blue: 224 76% 48%;       /* #1D4ED8 */
+  --blueprint-blue-light: 217 91% 60%; /* #2563EB */
+  --blueprint-wash: 214 100% 97%;      /* #EFF6FF */
+  --blueprint-ink: 222 47% 11%;        /* #0F172A */
+  --blueprint-grid: 215 28% 90%;       /* #E2E8F0 */
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -69,6 +59,7 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-doodle: var(--font-architects-daughter), cursive;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -128,7 +119,65 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   React Flow overrides — match Blueprint dark palette
+   Hand-Drawn Doodle Utilities & Borders
+   ───────────────────────────────────────────────────────────── */
+.font-doodle {
+  font-family: var(--font-architects-daughter), "Architects Daughter", cursive, sans-serif;
+}
+
+/* Wobbly Hand-Drawn Outlines */
+.doodle-border {
+  border: 2px solid hsl(var(--foreground));
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+.doodle-border-lg {
+  border: 2.5px solid hsl(var(--foreground));
+  border-radius: 255px 25px 225px 25px/25px 225px 25px 255px;
+}
+
+.doodle-border-sm {
+  border: 2px solid hsl(var(--foreground));
+  border-radius: 255px 10px 225px 10px/10px 225px 10px 255px;
+}
+
+/* Hand-drawn offset ink shadow */
+.doodle-shadow {
+  box-shadow: 3px 4px 0px 0px hsl(var(--foreground));
+}
+
+.doodle-shadow-sm {
+  box-shadow: 2px 2.5px 0px 0px hsl(var(--foreground));
+}
+
+.doodle-shadow-lg {
+  box-shadow: 5px 6px 0px 0px hsl(var(--foreground));
+}
+
+.doodle-shadow-blue {
+  box-shadow: 3px 4px 0px 0px hsl(var(--primary));
+}
+
+/* Hover wobble */
+.hover-doodle-lift {
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+}
+
+.hover-doodle-lift:hover {
+  transform: translate(-2px, -2px) rotate(-0.5deg);
+  box-shadow: 5px 6px 0px 0px hsl(var(--foreground));
+}
+
+/* Scribble Underline */
+.doodle-underline {
+  background-image: linear-gradient(120deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 30%;
+  background-position: 0 88%;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   React Flow overrides — Hand-Drawn Blueprint Paper Aesthetic
    ───────────────────────────────────────────────────────────── */
 .react-flow {
   background-color: hsl(var(--background));
@@ -141,22 +190,22 @@ body {
 /* Controls */
 .react-flow__controls {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border: 2px solid hsl(var(--foreground));
+  border-radius: 12px;
+  box-shadow: 3px 3px 0px 0px hsl(var(--foreground));
   overflow: hidden;
 }
 
 .react-flow__controls-button {
   background: hsl(var(--card));
-  border-bottom: 1px solid hsl(var(--border));
-  color: hsl(var(--muted-foreground));
+  border-bottom: 2px solid hsl(var(--foreground));
+  color: hsl(var(--foreground));
   transition: background 0.15s, color 0.15s;
 }
 
 .react-flow__controls-button:hover {
-  background: hsl(var(--accent));
-  color: hsl(var(--foreground));
+  background: hsl(var(--secondary));
+  color: hsl(var(--primary));
 }
 
 .react-flow__controls-button svg {
@@ -166,46 +215,49 @@ body {
 /* MiniMap */
 .react-flow__minimap {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border: 2px solid hsl(var(--foreground));
+  border-radius: 12px;
+  box-shadow: 3px 3px 0px 0px hsl(var(--foreground));
   overflow: hidden;
 }
 
 /* Node selection ring */
 .react-flow__node.selected > .blueprint-node {
   border-color: hsl(var(--primary)) !important;
-  box-shadow: 0 0 0 1px hsl(var(--primary)), 0 0 20px rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 4px 5px 0px 0px hsl(var(--primary)) !important;
 }
 
 /* Edge */
 .react-flow__edge-path {
-  stroke: hsl(var(--border));
-  stroke-width: 2;
+  stroke: hsl(var(--foreground));
+  stroke-width: 2.5;
+  stroke-dasharray: 6 3;
 }
 
 .react-flow__edge:hover .react-flow__edge-path,
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: hsl(var(--primary));
+  stroke-width: 3;
 }
 
 /* Handles */
 .react-flow__handle {
-  background: hsl(var(--muted));
-  border: 2px solid hsl(var(--border));
-  width: 10px;
-  height: 10px;
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--foreground));
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
   transition: background 0.15s, border-color 0.15s;
 }
 
 .react-flow__handle:hover {
   background: hsl(var(--primary));
-  border-color: hsl(var(--primary));
+  border-color: hsl(var(--foreground));
 }
 
 .react-flow__handle-connecting {
   background: hsl(var(--primary));
-  border-color: hsl(var(--primary));
+  border-color: hsl(var(--foreground));
 }
 
 /* Attribution */
@@ -216,5 +268,5 @@ body {
 /* Connection line */
 .react-flow__connectionline path {
   stroke: hsl(var(--primary));
-  stroke-width: 2;
+  stroke-width: 2.5;
 }

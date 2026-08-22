@@ -1,8 +1,10 @@
-import { FormBuilder } from '@/components/builder/FormBuilder'
-import React from 'react'
+import { FormBuilder } from "@/components/builder/FormBuilder";
+import { MobileBuilderGate } from "@/components/builder/MobileBuilderGate";
 
-const page = () => {
-  return <FormBuilder />
+export default function FormBuilderPage() {
+  return (
+    <MobileBuilderGate>
+      <FormBuilder />
+    </MobileBuilderGate>
+  );
 }
-
-export default page

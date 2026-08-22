@@ -217,7 +217,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
             My Forms
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[hsl(var(--mocha-mauve))/0.15] text-[hsl(var(--mocha-mauve))] border border-[hsl(var(--mocha-mauve))/0.3]">
+            <span className="text-xs font-mono px-2 py-0.5 rounded-sm bg-[hsl(var(--mocha-mauve))/0.15] text-[hsl(var(--mocha-mauve))] border border-[hsl(var(--mocha-mauve))/0.3]">
               {forms.length} TOTAL
             </span>
           </h1>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Controls & Filter Bar ───────────────────────────────── */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-card/20 border border-border/80 rounded-xl p-3.5 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-card/20 border border-border/80 rounded-xl p-3.5 backdrop-blur-xs">
         {/* Search */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
@@ -259,7 +259,7 @@ export default function DashboardPage() {
                 className={cn(
                   "px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all",
                   activeFilter === filter
-                    ? "bg-card text-foreground shadow-sm"
+                    ? "bg-card text-foreground shadow-xs"
                     : "text-muted-foreground/80 hover:text-foreground"
                 )}
               >
@@ -342,149 +342,153 @@ export default function DashboardPage() {
           )}
         </div>
       ) : (
-        /* Actual Forms list grid */
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        /* Actual Forms list grid with Hand-Drawn Doodle Cards */
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {/* Form items */}
-          {sortedForms.map((form) => (
-            <div
-              key={form.id}
-              onClick={() => router.push(`/forms/${form.id}`)}
-              className={cn(
-                "group relative flex flex-col justify-between rounded-xl border bg-card p-5 transition-all duration-150 cursor-pointer",
-                "border-border hover:border-primary/30 hover:shadow-md"
-              )}
-            >
-              {/* Top Row: Title, status, actions */}
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-semibold text-foreground leading-snug group-hover:text-primary transition-colors truncate">
-                    {form.title}
-                  </h3>
+          {sortedForms.map((form, index) => {
+            // Apply subtle organic rotation per card for doodle feel
+            const rotationDegree = index % 3 === 0 ? "rotate-[-0.6deg]" : index % 3 === 1 ? "rotate-[0.8deg]" : "rotate-[-0.3deg]";
+            return (
+              <div
+                key={form.id}
+                onClick={() => router.push(`/forms/${form.id}`)}
+                className={cn(
+                  "group relative flex flex-col justify-between bg-white p-5 border-2 border-[hsl(var(--foreground))] doodle-border-lg shadow-[4px_5px_0px_0px_hsl(var(--foreground))] transition-all duration-150 cursor-pointer hover-doodle-lift",
+                  rotationDegree
+                )}
+              >
+                {/* Top Row: Title, status, actions */}
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-doodle font-bold text-lg text-[hsl(var(--foreground))] leading-snug group-hover:text-[hsl(var(--primary))] transition-colors truncate">
+                      {form.title}
+                    </h3>
 
-                  <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    {/* Status badge */}
-                    <Badge
-                      variant={
-                        form.status === "published"
-                          ? "success"
-                          : form.status === "closed"
-                          ? "destructive"
-                          : "muted"
-                      }
-                      className="text-[9px] uppercase tracking-wider px-1.5 py-0 font-semibold"
-                    >
-                      {form.status}
-                    </Badge>
-                    {form.availabilityStatus && form.availabilityStatus !== "accepting" && form.status === "published" && (
-                      <Badge variant="muted" className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5">
-                        {form.availabilityStatus.replaceAll("_", " ")}
+                    <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {/* Status badge */}
+                      <Badge
+                        variant={
+                          form.status === "published"
+                            ? "success"
+                            : form.status === "closed"
+                            ? "destructive"
+                            : "outline"
+                        }
+                        className="text-[9px] uppercase tracking-wider px-2 py-0.5 font-bold font-mono"
+                      >
+                        {form.status}
                       </Badge>
-                    )}
+                      {form.availabilityStatus && form.availabilityStatus !== "accepting" && form.status === "published" && (
+                        <Badge variant="muted" className="text-[9px] uppercase tracking-wider font-bold font-mono">
+                          {form.availabilityStatus.replaceAll("_", " ")}
+                        </Badge>
+                      )}
 
-                    {/* Quick actions dropdown */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-accent/60 transition-colors">
-                          <MoreVertical className="h-3.5 w-3.5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem
-                          className="gap-2 text-xs"
-                          onClick={() => router.push(`/forms/${form.id}`)}
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          Open
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="gap-2 text-xs"
-                          onClick={() => handleDuplicate(form)}
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="gap-2 text-xs"
-                          onClick={() => openRenameDialog(form)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {form.status === "draft" && (
+                      {/* Quick actions dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex h-7 w-7 items-center justify-center rounded-lg border-2 border-transparent hover:border-[hsl(var(--foreground))] hover:bg-slate-100 transition-all text-slate-600 hover:text-[hsl(var(--foreground))]">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuItem
-                            className="gap-2 text-xs"
-                            onClick={() => void handleStatusChange(form, "published")}
+                            className="gap-2 text-xs font-bold font-mono"
+                            onClick={() => router.push(`/forms/${form.id}`)}
                           >
-                            <Globe className="h-3.5 w-3.5" />
-                            Publish
+                            <ExternalLink className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                            Open
                           </DropdownMenuItem>
-                        )}
-                        {form.status === "published" && (
                           <DropdownMenuItem
-                            className="gap-2 text-xs"
-                            onClick={() => void handleStatusChange(form, "closed")}
+                            className="gap-2 text-xs font-bold font-mono"
+                            onClick={() => handleDuplicate(form)}
                           >
-                            <XCircle className="h-3.5 w-3.5" />
-                            Close responses
+                            <Copy className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                            Duplicate
                           </DropdownMenuItem>
-                        )}
-                        {form.status === "closed" && (
                           <DropdownMenuItem
-                            className="gap-2 text-xs"
-                            onClick={() => void handleStatusChange(form, "published")}
+                            className="gap-2 text-xs font-bold font-mono"
+                            onClick={() => openRenameDialog(form)}
                           >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            Reopen responses
+                            <Pencil className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                            Rename
                           </DropdownMenuItem>
-                        )}
-                        {form.status !== "archived" && (
+                          <DropdownMenuSeparator />
+                          {form.status === "draft" && (
+                            <DropdownMenuItem
+                              className="gap-2 text-xs font-bold font-mono"
+                              onClick={() => void handleStatusChange(form, "published")}
+                            >
+                              <Globe className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
+                              Publish
+                            </DropdownMenuItem>
+                          )}
+                          {form.status === "published" && (
+                            <DropdownMenuItem
+                              className="gap-2 text-xs font-bold font-mono"
+                              onClick={() => void handleStatusChange(form, "closed")}
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                              Close responses
+                            </DropdownMenuItem>
+                          )}
+                          {form.status === "closed" && (
+                            <DropdownMenuItem
+                              className="gap-2 text-xs font-bold font-mono"
+                              onClick={() => void handleStatusChange(form, "published")}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Reopen responses
+                            </DropdownMenuItem>
+                          )}
+                          {form.status !== "archived" && (
+                            <DropdownMenuItem
+                              className="gap-2 text-xs font-bold font-mono"
+                              onClick={() => void handleStatusChange(form, "archived")}
+                            >
+                              <Archive className="h-3.5 w-3.5" />
+                              Archive
+                            </DropdownMenuItem>
+                          )}
+                          {form.status === "archived" && (
+                            <DropdownMenuItem
+                              className="gap-2 text-xs font-bold font-mono"
+                              onClick={() => void handleStatusChange(form, "draft")}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Restore as draft
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="gap-2 text-xs"
-                            onClick={() => void handleStatusChange(form, "archived")}
+                            className="gap-2 text-xs font-bold font-mono text-[hsl(var(--destructive))] focus:text-[hsl(var(--destructive))]"
+                            onClick={() => openDeleteDialog(form)}
                           >
-                            <Archive className="h-3.5 w-3.5" />
-                            Archive
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </DropdownMenuItem>
-                        )}
-                        {form.status === "archived" && (
-                          <DropdownMenuItem
-                            className="gap-2 text-xs"
-                            onClick={() => void handleStatusChange(form, "draft")}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            Restore as draft
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="gap-2 text-xs text-destructive focus:text-destructive"
-                          onClick={() => openDeleteDialog(form)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
+
+                  {/* Description */}
+                  <p className="text-xs text-slate-600 font-sans font-medium mt-2 line-clamp-2 leading-relaxed">
+                    {form.description || "No description provided."}
+                  </p>
                 </div>
 
-                {/* Description */}
-                <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
-                  {form.description || "No description provided."}
-                </p>
+                {/* Bottom Row: Stats & Metadata */}
+                <div className="flex items-center justify-between pt-4 mt-4 border-t-2 border-[hsl(var(--foreground))/0.12] text-[10px] font-mono text-slate-500 font-bold">
+                  <span>Created {form.createdLabel}</span>
+                  <span className="flex items-center gap-1.5 font-bold text-[hsl(var(--primary))] bg-[hsl(var(--blueprint-wash))] border border-[hsl(var(--primary))/0.4] px-2.5 py-1 rounded-md shadow-[1.5px_1.5px_0px_0px_hsl(var(--foreground))]">
+                    <Sparkles className="h-3 w-3 text-[hsl(var(--primary))] shrink-0" />
+                    {form.responseCount} response{form.responseCount !== 1 && "s"}
+                  </span>
+                </div>
               </div>
-
-              {/* Bottom Row: Stats */}
-              <div className="flex items-center justify-between pt-5 mt-4 border-t border-border/50 text-[10px] text-muted-foreground font-medium">
-                <span>Created {form.createdLabel}</span>
-                <span className="flex items-center gap-1 font-semibold text-foreground/80 bg-muted/40 px-2 py-0.5 rounded">
-                  <Sparkles className="h-3 w-3 text-primary shrink-0" />
-                  {form.responseCount} response{form.responseCount !== 1 && "s"}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

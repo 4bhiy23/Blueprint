@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Eye, Globe, LayoutGrid, Pencil, Check, Loader2, CloudCheck, AlertCircle } from "lucide-react";
+import { Eye, Globe, Pencil, Check, Loader2, CloudCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FORM_UPDATED_EVENT, type FormStatus } from "@/lib/forms";
 import { useFormMutations } from "@/features/forms/queries";
+import { BlueprintLogo } from "@/components/brand/BlueprintLogo";
 
 interface TopNavProps {
   formId: string;
@@ -95,24 +96,19 @@ export function TopNav({
   };
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card/60 px-4 backdrop-blur-sm">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b-2 border-[hsl(var(--foreground))] bg-[hsl(var(--background))] px-4 shadow-[0_2px_0_0_hsl(var(--foreground))] z-30">
       {/* ── Left: Logo + Title + Autosave Indicator ──────────────── */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Blueprint logo mark */}
         <Link
           href="/dashboard"
           aria-label="Go to dashboard"
-          className="flex items-center gap-2 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center gap-2 shrink-0 rounded-md focus-visible:outline-hidden"
         >
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-            <LayoutGrid className="h-3.5 w-3.5 text-primary-foreground" />
-          </div>
-          <span className="text-sm font-semibold text-foreground hidden sm:block">
-            Blueprint
-          </span>
+          <BlueprintLogo showText={true} />
         </Link>
 
-        <Separator orientation="vertical" className="h-4" />
+        <Separator orientation="vertical" className="h-5 bg-[hsl(var(--foreground))/0.2]" />
 
         {/* Editable form title */}
         {isEditingTitle && !readOnly ? (
@@ -133,7 +129,7 @@ export function TopNav({
             />
             <button
               onClick={handleTitleCommit}
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground cursor-pointer"
+              className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <Check className="h-3.5 w-3.5" />
             </button>

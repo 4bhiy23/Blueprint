@@ -6,16 +6,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  Settings,
   Bell,
   Search,
   Sun,
   Moon,
   LogOut,
-  User,
   LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BlueprintLogo } from "@/components/brand/BlueprintLogo";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -117,22 +116,17 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
       {/* ─────────────────────────────────────────────────────────────
-         GLOBAL TOP NAVIGATION BAR
+         GLOBAL TOP NAVIGATION BAR — Hand-Drawn Blueprint Ink Style
          ───────────────────────────────────────────────────────────── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-30">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b-2 border-[hsl(var(--foreground))] bg-[hsl(var(--background))] px-4 md:px-6 z-30 shadow-[0_2px_0_0_hsl(var(--foreground))]">
         {/* Left: Brand Logo & Links */}
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] shadow-md group-hover:scale-105 transition-transform">
-              <LayoutGrid className="h-4 w-4 stroke-[2.5]" />
-            </div>
-            <span className="text-sm font-bold tracking-tight text-foreground font-mono">
-              BLUEPRINT
-            </span>
+          <Link href="/dashboard">
+            <BlueprintLogo showText={true} />
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => {
               const isActive =
                 link.href === "/dashboard"
@@ -142,10 +136,10 @@ export default function DashboardLayout({
                 <Link key={link.label} href={link.href}>
                   <span
                     className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer",
+                      "px-3.5 py-1.5 text-xs font-extrabold transition-all cursor-pointer border-2 border-transparent font-mono rounded-lg",
                       isActive
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                        ? "bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))] border-[hsl(var(--foreground))] shadow-[2px_2px_0px_0px_hsl(var(--foreground))]"
+                        : "text-slate-600 hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--foreground))/0.4]"
                     )}
                   >
                     {link.label}
@@ -176,37 +170,27 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Profile Dropdown */}
+          {/* Profile Dropdown Trigger */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center justify-center rounded-full border border-border focus:outline-none shrink-0 transition-opacity hover:opacity-90">
-                <Avatar className="h-7 w-7">
+              <button className="flex items-center justify-center rounded-full border-2 border-[hsl(var(--foreground))] bg-white shadow-[2px_2px_0px_0px_hsl(var(--foreground))] focus:outline-hidden shrink-0 transition-transform hover:scale-105 active:translate-x-px active:translate-y-px">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={userAvatarUrl} />
-                  <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                  <AvatarFallback className="text-xs font-bold font-mono bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))]">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-56 mt-1">
-              <DropdownMenuLabel className="font-normal">
+            <DropdownMenuContent align="end" className="w-56 mt-2">
+              <DropdownMenuLabel className="font-normal border-b-2 border-[hsl(var(--foreground))/0.1] pb-2 mb-1">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-xs font-semibold leading-none">{userName}</p>
-                  <p className="text-[10px] leading-none text-muted-foreground">{userEmail}</p>
+                  <p className="text-xs font-bold font-doodle text-[hsl(var(--foreground))] leading-none">{userName}</p>
+                  <p className="text-[10px] font-mono leading-none text-slate-500">{userEmail}</p>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 text-xs" onClick={() => router.push("/settings")}>
-                <User className="h-3.5 w-3.5" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 text-xs" onClick={() => router.push("/settings")}>
-                <Settings className="h-3.5 w-3.5" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 text-xs text-destructive focus:text-destructive" onClick={handleSignOut}>
+              <DropdownMenuItem className="gap-2 text-xs font-bold font-mono text-[hsl(var(--destructive))] focus:text-[hsl(var(--destructive))] focus:bg-red-50" onClick={handleSignOut}>
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </DropdownMenuItem>

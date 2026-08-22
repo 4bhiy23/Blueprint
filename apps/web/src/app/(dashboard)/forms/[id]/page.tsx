@@ -6,6 +6,7 @@ import {
   Copy,
   Globe,
   ArrowRight,
+  BarChart3,
   FileText,
   Check,
   ExternalLink,
@@ -13,7 +14,6 @@ import {
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ import {
   type FormStatus,
 } from "@/lib/forms";
 import { useFormMutations, useFormQuery } from "@/features/forms/queries";
+import { FormAvailabilitySettings } from "@/features/forms/form-availability-settings";
 
 export default function FormOverviewPage() {
   const router = useRouter();
@@ -85,7 +86,7 @@ export default function FormOverviewPage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      {/* ─── Left Section: Form Information & Visual Preview ──────────────── */}
+      {/* ─── Left Section: Form Information & Settings ────────────────────── */}
       <div className="lg:col-span-2 space-y-6">
         {/* Form Information */}
         <Card className="p-5 bg-card border border-border">
@@ -113,21 +114,10 @@ export default function FormOverviewPage() {
           </div>
         </Card>
 
-        {/* Visual Flow Preview (Read Only) */}
-        <Card className="bg-card border border-border overflow-hidden flex flex-col min-h-[340px]">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between shrink-0">
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Builder Preview</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Available after builder API integration</p>
-            </div>
-            <Badge variant="muted" className="text-[10px]">Coming soon</Badge>
-          </div>
-          <div className="flex flex-1 items-center justify-center bg-background p-6 text-center" style={{ minHeight: "260px" }}>
-            <p className="max-w-sm text-xs text-muted-foreground">
-              The saved question flow will appear here once the builder is connected to the API.
-            </p>
-          </div>
-        </Card>
+        {/* Form Availability Settings (Desktop position) */}
+        <div className="hidden lg:block">
+          <FormAvailabilitySettings formId={form.id} />
+        </div>
       </div>
 
       {/* ─── Right Section: Quick Stats, Responses, Actions ────────────────── */}
@@ -138,7 +128,7 @@ export default function FormOverviewPage() {
           <div className="grid gap-2">
             <Button
               size="sm"
-              className="w-full text-xs font-bold h-9 gap-2 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all"
+              className="hidden w-full text-xs font-bold h-9 gap-2 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all md:flex"
               onClick={() => router.push(`/forms/${form.id}/builder`)}
             >
               Open Builder <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -273,6 +263,28 @@ export default function FormOverviewPage() {
               : `${form.responseCount ?? 0} responses received.`}
           </p>
         </Card>
+
+        <Card className="p-5 bg-card border border-border space-y-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-semibold text-foreground text-sm">Analytics</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => router.push(`/forms/${form.id}/analytics`)}
+            >
+              <BarChart3 className="h-3.5 w-3.5" /> View analytics
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Review response activity and completion trends.
+          </p>
+        </Card>
+      </div>
+
+      {/* ─── Mobile Only: Form Availability Settings at the bottom ──────────── */}
+      <div className="lg:hidden">
+        <FormAvailabilitySettings formId={form.id} />
       </div>
     </div>
   );

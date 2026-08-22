@@ -32,7 +32,7 @@ function ComponentCard({ questionType }: { questionType: QuestionType }) {
       ref={setNodeRef}
       className={cn(
         "group relative flex items-start gap-3 rounded-lg border border-border bg-card p-3 transition-all duration-150 cursor-grab",
-        "hover:border-border/80 hover:bg-accent/40 hover:shadow-sm",
+        "hover:border-border/80 hover:bg-accent/40 hover:shadow-xs",
         isDragging && "opacity-40 cursor-grabbing"
       )}
     >

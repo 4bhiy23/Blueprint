@@ -151,7 +151,7 @@ export default function ResponsesPage() {
       {activeTab === "default" && (
         <>
           {responsesList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/20 p-12 text-center shadow-sm">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/20 p-12 text-center shadow-xs">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-muted-foreground mb-4">
                 <Inbox className="h-6 w-6" />
               </div>
@@ -255,7 +255,7 @@ export default function ResponsesPage() {
                 {/* Center Question Title & Counter */}
                 <div className="text-center min-w-0">
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-[10px] font-mono font-bold text-[hsl(var(--mocha-mauve))] bg-[hsl(var(--mocha-mauve))/0.15] px-2.5 py-0.5 rounded border border-[hsl(var(--mocha-mauve))/0.3]">
+                    <span className="text-[10px] font-mono font-bold text-[hsl(var(--mocha-mauve))] bg-[hsl(var(--mocha-mauve))/0.15] px-2.5 py-0.5 rounded-sm border border-[hsl(var(--mocha-mauve))/0.3]">
                       QUESTION {currentQuestionIndex + 1} OF {questionsList.length}
                     </span>
                     {currentQuestion.required && (

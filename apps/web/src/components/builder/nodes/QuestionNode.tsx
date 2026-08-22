@@ -53,7 +53,7 @@ function InputPreview({
           <div key={o.id} className="flex items-center gap-1.5">
             <div
               className={cn(
-                "h-3 w-3 rounded-sm border border-border shrink-0",
+                "h-3 w-3 rounded-xs border border-border shrink-0",
                 questionType === "radio" && "rounded-full"
               )}
             />
@@ -75,7 +75,7 @@ function InputPreview({
     return (
       <div className="mt-2 flex gap-1">
         {Array.from({ length: Math.min(ratingMax, 10) }, (_, index) => (
-          <span key={index} className="flex h-5 w-5 items-center justify-center rounded border border-border text-[10px] text-muted-foreground">
+          <span key={index} className="flex h-5 w-5 items-center justify-center rounded-sm border border-border text-[10px] text-muted-foreground">
             {index + 1}
           </span>
         ))}
@@ -85,7 +85,7 @@ function InputPreview({
   }
 
   return (
-    <div className="mt-2 h-7 w-full rounded border border-dashed border-border/60 bg-muted/30 flex items-center px-2">
+    <div className="mt-2 h-7 w-full rounded-sm border border-dashed border-border/60 bg-muted/30 flex items-center px-2">
       <span className="text-xs text-muted-foreground/50 truncate">
         {QUESTION_TYPE_META[questionType].inputPreview}
       </span>
@@ -137,7 +137,7 @@ export const QuestionNode = memo(function QuestionNode({
   return (
     <div
       className={cn(
-        "blueprint-node relative w-64 rounded-xl border bg-card shadow-sm transition-all duration-200",
+        "blueprint-node relative w-64 rounded-xl border bg-card shadow-xs transition-all duration-200",
         "border-border",
         selected &&
           "border-primary shadow-[0_0_0_1px_hsl(var(--primary)),0_0_20px_rgba(99,102,241,0.15)]",
@@ -152,15 +152,15 @@ export const QuestionNode = memo(function QuestionNode({
         type="target"
         position={Position.Top}
         className={cn(
-          "!border-border !bg-muted transition-all",
-          (selected || isHovered) && "!border-primary/60 !bg-primary/30"
+          "border-border! bg-muted! transition-all",
+          (selected || isHovered) && "border-primary/60! bg-primary/30!"
         )}
       />
 
       {/* ── Header ─────────────────────────────── */}
       <div className="flex items-center justify-between gap-2 px-3.5 pt-3 pb-2.5 border-b border-border/60">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/15 text-primary">
+          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-primary/15 text-primary">
             <Icon className="h-3 w-3" />
           </div>
           <span className="text-xs font-medium text-muted-foreground truncate">
@@ -181,7 +181,7 @@ export const QuestionNode = memo(function QuestionNode({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="nodrag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none"
+                className="nodrag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
@@ -245,8 +245,8 @@ export const QuestionNode = memo(function QuestionNode({
         type="source"
         position={Position.Bottom}
         className={cn(
-          "!border-border !bg-muted transition-all",
-          (selected || isHovered) && "!border-primary/60 !bg-primary/30"
+          "border-border! bg-muted! transition-all",
+          (selected || isHovered) && "border-primary/60! bg-primary/30!"
         )}
       />
     </div>

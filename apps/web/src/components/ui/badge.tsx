@@ -3,25 +3,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-md border-2 border-[hsl(var(--foreground))] px-2.5 py-0.5 text-xs font-bold font-mono transition-transform focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:rotate-1",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground",
+          "bg-[hsl(var(--primary))] text-white shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground",
+          "bg-[hsl(var(--secondary))] text-[hsl(var(--primary))] shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground",
-        outline: "text-foreground",
+          "bg-[hsl(var(--destructive))] text-white shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
+        outline: "bg-white text-[hsl(var(--foreground))] shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
         success:
-          "border-transparent bg-[hsl(var(--mocha-green))/0.15] text-[hsl(var(--mocha-green))] border-[hsl(var(--mocha-green))/0.3]",
+          "bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))] border-[hsl(var(--primary))] shadow-[2px_2px_0px_0px_hsl(var(--primary))]",
         warning:
-          "border-transparent bg-[hsl(var(--mocha-peach))/0.15] text-[hsl(var(--mocha-peach))] border-[hsl(var(--mocha-peach))/0.3]",
+          "bg-amber-50 text-amber-900 border-amber-800 shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
         info:
-          "border-transparent bg-[hsl(var(--mocha-sapphire))/0.15] text-[hsl(var(--mocha-sapphire))] border-[hsl(var(--mocha-sapphire))/0.3]",
+          "bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))] shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
         muted:
-          "border border-border bg-secondary text-muted-foreground",
+          "bg-slate-100 text-slate-700 shadow-[2px_2px_0px_0px_hsl(var(--foreground))]",
       },
     },
     defaultVariants: {

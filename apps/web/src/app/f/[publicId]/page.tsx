@@ -406,7 +406,7 @@ export default function PublicFormResponderPage() {
               {currentQuestion.type === "select" && (
                 <div className="relative">
                   <select
-                    className="w-full bg-secondary/40 border border-border text-foreground rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-[hsl(var(--mocha-mauve))] appearance-none transition-colors"
+                    className="w-full bg-secondary/40 border border-border text-foreground rounded-xl px-4 py-3 text-xs focus:outline-hidden focus:ring-1 focus:ring-[hsl(var(--mocha-mauve))] appearance-none transition-colors"
                     value={currentAnswer.optionIds[0] || ""}
                     onChange={(e) => {
                       const optionId = e.target.value;
@@ -489,7 +489,7 @@ export default function PublicFormResponderPage() {
                         }`}
                       >
                         <span>{opt.label}</span>
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                        <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-all ${
                           isChecked ? "border-[hsl(var(--mocha-mauve))] bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))]" : "border-border"
                         }`}>
                           {isChecked && <Check className="h-3 w-3 stroke-3" />}

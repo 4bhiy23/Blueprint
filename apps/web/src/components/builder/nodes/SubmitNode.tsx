@@ -21,7 +21,7 @@ export const SubmitNode = memo(function SubmitNode({
       <Handle
         type="target"
         position={Position.Top}
-        className="!border-blue-500/60 !bg-blue-500/30 hover:!bg-blue-400"
+        className="border-blue-500/60! bg-blue-500/30! hover:bg-blue-400!"
       />
       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20">
         <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />

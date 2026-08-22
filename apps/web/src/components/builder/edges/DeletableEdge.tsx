@@ -56,7 +56,7 @@ export function DeletableEdge({
           {/* Delete button — only visible on hover over the edge */}
           <button
             onClick={handleDelete}
-            className="flex h-5 w-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 transition-all duration-150 hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 shadow-sm"
+            className="flex h-5 w-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 transition-all duration-150 hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 shadow-xs"
             title="Remove edge"
           >
             <X className="h-2.5 w-2.5" />

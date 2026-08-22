@@ -4,27 +4,29 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold transition-all duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90 active:scale-[0.98]",
+          "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-2 border-[hsl(var(--foreground))] doodle-border-sm shadow-[3px_3px_0px_0px_hsl(var(--foreground))] hover:bg-[hsl(var(--blueprint-blue-light))] hover:shadow-[4px_5px_0px_0px_hsl(var(--foreground))]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] border-2 border-[hsl(var(--foreground))] doodle-border-sm shadow-[3px_3px_0px_0px_hsl(var(--foreground))] hover:shadow-[4px_5px_0px_0px_hsl(var(--foreground))]",
         outline:
-          "border border-border bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "border-2 border-[hsl(var(--foreground))] bg-white text-[hsl(var(--foreground))] doodle-border-sm shadow-[3px_3px_0px_0px_hsl(var(--foreground))] hover:bg-[hsl(var(--blueprint-wash))] hover:text-[hsl(var(--primary))] hover:shadow-[4px_5px_0px_0px_hsl(var(--foreground))]",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] border-2 border-[hsl(var(--foreground))] doodle-border-sm shadow-[3px_3px_0px_0px_hsl(var(--foreground))] hover:bg-white",
+        ghost:
+          "hover:bg-[hsl(var(--blueprint-wash))] hover:text-[hsl(var(--primary))] rounded-lg border-2 border-transparent hover:border-[hsl(var(--foreground))]",
+        link:
+          "text-[hsl(var(--primary))] font-bold underline decoration-2 underline-offset-4 hover:opacity-80",
       },
       size: {
         default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-11 px-7 text-base font-extrabold",
         icon: "h-9 w-9",
-        "icon-sm": "h-7 w-7 rounded-md",
+        "icon-sm": "h-7 w-7",
       },
     },
     defaultVariants: {

@@ -169,7 +169,7 @@ export function BuilderCanvas({
           position="bottom-right"
           nodeColor={minimapNodeColor}
           maskColor="rgba(7,8,14,0.85)"
-          className="mb-4 mr-4 !border-border !rounded-lg overflow-hidden"
+          className="mb-4 mr-4 border-border! rounded-lg! overflow-hidden"
           pannable
           zoomable
         />
