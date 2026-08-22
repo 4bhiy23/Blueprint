@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import { BlueprintLogoIcon } from "@/components/brand/BlueprintLogo";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const [form, setForm] = useState({
     name: "",
@@ -26,6 +27,14 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (session) router.replace("/dashboard");
+  }, [router, session]);
+
+  if (isSessionPending || session) {
+    return null;
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({
