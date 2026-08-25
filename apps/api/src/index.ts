@@ -13,6 +13,7 @@ import { auth } from "./libs/auth.js";
 import { toNodeHandler } from "better-auth/node";
 
 const app = express();
+const frontendOrigin = new URL(apiEnv.FRONTEND_URL).origin;
 
 // Render places the API behind one trusted proxy. This preserves the original
 // visitor IP for public-form duplicate checks and rate limiting.
@@ -39,7 +40,7 @@ app.use(
 
 app.use(
   cors({
-    origin: apiEnv.FRONTEND_URL,
+    origin: frontendOrigin,
     credentials: true,
   }),
 );

@@ -3,6 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@repo/db";
 import { apiEnv } from "@repo/env";
 
+const frontendOrigin = new URL(apiEnv.FRONTEND_URL).origin;
+
 export const auth = betterAuth({
   baseURL: apiEnv.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
@@ -17,6 +19,13 @@ export const auth = betterAuth({
       trustedProviders: ["google"],
     },
   },
+  advanced: {
+    useSecureCookies: true,
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: ".blueprint.4bhi.dev",
+    },
+  },
   ...(apiEnv.GOOGLE_CLIENT_ID && apiEnv.GOOGLE_CLIENT_SECRET
     ? {
         socialProviders: {
@@ -27,5 +36,5 @@ export const auth = betterAuth({
         },
       }
     : {}),
-  trustedOrigins: [apiEnv.FRONTEND_URL],
+  trustedOrigins: [frontendOrigin],
 });
