@@ -4,6 +4,7 @@ import { db } from "@repo/db";
 import { apiEnv } from "@repo/env";
 
 const frontendOrigin = new URL(apiEnv.FRONTEND_URL).origin;
+const isProduction = apiEnv.NODE_ENV === "production";
 
 export const auth = betterAuth({
   baseURL: apiEnv.BETTER_AUTH_URL,
@@ -20,11 +21,15 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    useSecureCookies: true,
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: ".blueprint.4bhi.dev",
-    },
+    useSecureCookies: isProduction,
+    ...(isProduction
+      ? {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: ".blueprint.4bhi.dev",
+          },
+        }
+      : {}),
   },
   ...(apiEnv.GOOGLE_CLIENT_ID && apiEnv.GOOGLE_CLIENT_SECRET
     ? {
