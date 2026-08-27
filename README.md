@@ -27,6 +27,7 @@ packages/
 
 - Node.js 22 or later
 - pnpm 11
+- Docker Desktop (for the local Redis service)
 - A PostgreSQL database (Neon is recommended)
 
 ## Local setup
@@ -48,6 +49,7 @@ NODE_ENV=development
 BETTER_AUTH_SECRET=replace-with-a-long-random-secret
 BETTER_AUTH_URL=http://localhost:4000
 FRONTEND_URL=http://localhost:3000
+REDIS_URL=redis://localhost:6379
 GOOGLE_CLIENT_ID=your-google-oauth-client-id
 GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 ```
@@ -72,12 +74,14 @@ pnpm --filter @repo/db push
 pnpm dev
 ```
 
-The web app runs on `http://localhost:3000` and the API runs on `http://localhost:4000`.
+`pnpm dev` checks Redis before starting the web app and API. If Redis is not already reachable, it starts the local Docker service and waits for its health check. The web app runs on `http://localhost:3000` and the API runs on `http://localhost:4000`.
 
 ## Useful commands
 
 ```bash
 pnpm dev                         # Start all workspace development servers
+pnpm dev:services                # Start and wait for local Redis only
+pnpm dev:services:down           # Stop local Redis
 pnpm typecheck                   # Typecheck all workspace packages
 pnpm lint                        # Lint all workspace packages
 pnpm build                       # Build all workspace packages

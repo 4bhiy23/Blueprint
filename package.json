@@ -3,7 +3,10 @@
   "private": true,
   "packageManager": "pnpm@11.12.0",
   "scripts": {
+    "dev:services": "node scripts/ensure-redis.mjs",
+    "predev": "pnpm dev:services",
     "dev": "turbo dev",
+    "dev:services:down": "docker compose -f compose.redis.yml down",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",

@@ -40,6 +40,7 @@ import {
   SUBMIT_NODE_ID,
 } from "./types";
 import { serializeBuilder } from "./builder-serialization";
+import { createAutomaticEdges, haveSameEdges } from "./automatic-flow";
 
 // ─── Safe UUID generator ───────────────────────────────────────────────────
 function generateUUID(): string {
@@ -79,7 +80,7 @@ function FormBuilderInner() {
   const formId = (params?.formId || params?.id) as string;
 
   const [nodes, setNodes, onNodesChange] = useNodesState<BuilderNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<BuilderEdge>([]);
+  const [edges, setEdges] = useEdgesState<BuilderEdge>([]);
 
   const [form, setForm] = useState<FormRecord | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -117,8 +118,6 @@ function FormBuilderInner() {
 
     // Convert backend builder schema to frontend React Flow nodes and edges
     const backendNodes = builderData.nodes || [];
-    const backendEdges = builderData.edges || [];
-
     // Map backend nodes to frontend representation
     const questionNodes: BuilderNode[] = backendNodes.map((n) => ({
           id: n.id,
@@ -136,10 +135,12 @@ function FormBuilderInner() {
           },
     }));
 
-    const incomingMap = new Set(backendEdges.map((edge) => edge.target));
-    const outgoingMap = new Set(backendEdges.map((edge) => edge.source));
-    const firstQuestionNode = backendNodes.find((node) => !incomingMap.has(node.id));
-    const lastQuestionNode = backendNodes.find((node) => !outgoingMap.has(node.id));
+    const orderedQuestions = [...backendNodes].sort(
+      (left, right) =>
+        left.position.y - right.position.y || left.position.x - right.position.x || left.id.localeCompare(right.id),
+    );
+    const firstQuestionNode = orderedQuestions[0];
+    const lastQuestionNode = orderedQuestions.at(-1);
 
         // Position virtual nodes above and below the form's linear flow.
     const startPosition = firstQuestionNode
@@ -170,32 +171,7 @@ function FormBuilderInner() {
           },
     ];
 
-        // Construct frontend React Flow edges (backend edges + virtual start/submit edges)
-    const finalEdges: BuilderEdge[] = backendEdges.map((e) => ({
-          id: `edge_${e.source}_to_${e.target}`,
-          source: e.source,
-          target: e.target,
-          type: "deletable",
-    }));
-
-        // Link virtual start/submit nodes to the linear flow.
-    if (firstQuestionNode) {
-      finalEdges.push({
-        id: `edge_start_to_${firstQuestionNode.id}`,
-        source: START_NODE_ID,
-        target: firstQuestionNode.id,
-        type: "deletable",
-      });
-    }
-
-    if (lastQuestionNode) {
-      finalEdges.push({
-        id: `edge_${lastQuestionNode.id}_to_submit`,
-        source: lastQuestionNode.id,
-        target: SUBMIT_NODE_ID,
-        type: "deletable",
-      });
-    }
+    const finalEdges = createAutomaticEdges(finalNodes);
 
     hasHydratedBuilderRef.current = true;
     isInitialMountRef.current = true;
@@ -203,6 +179,16 @@ function FormBuilderInner() {
     setEdges(finalEdges);
     setIsLoaded(true);
   }, [builderQuery.data, formQuery.data, setEdges, setNodes]);
+
+  // Keep the linear graph in sync with the visual order on the canvas.
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const automaticEdges = createAutomaticEdges(nodes);
+    setEdges((currentEdges) =>
+      haveSameEdges(currentEdges, automaticEdges) ? currentEdges : automaticEdges,
+    );
+  }, [isLoaded, nodes, setEdges]);
 
   useEffect(() => {
     if (formQuery.error || builderQuery.error) {
@@ -474,7 +460,6 @@ function FormBuilderInner() {
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
             onNodeSelect={handleNodeSelect}
             onAddNode={handleAddNode}
             readOnly={isReadOnly}

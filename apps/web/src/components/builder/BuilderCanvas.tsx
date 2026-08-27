@@ -7,13 +7,9 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
-  addEdge,
-  useReactFlow,
-  type OnConnect,
   type NodeTypes,
   type EdgeTypes,
   type Node,
-  type OnEdgesChange,
   type OnNodesChange,
 } from "@xyflow/react";
 import { useDroppable } from "@dnd-kit/core";
@@ -22,14 +18,12 @@ import { cn } from "@/lib/utils";
 import { QuestionNode } from "./nodes/QuestionNode";
 import { StartNode } from "./nodes/StartNode";
 import { SubmitNode } from "./nodes/SubmitNode";
-import { DeletableEdge } from "./edges/DeletableEdge";
+import { AutomaticEdge } from "./edges/DeletableEdge";
 import {
   type BuilderNode,
   type BuilderEdge,
   type QuestionNodeData,
   CANVAS_DROP_ZONE_ID,
-  START_NODE_ID,
-  SUBMIT_NODE_ID,
 } from "./types";
 
 /* ─── Custom node & edge type maps ─────────────────────────────────────── */
@@ -43,11 +37,11 @@ const nodeTypes: NodeTypes = {
 };
 
 const edgeTypes: EdgeTypes = {
-  deletable: DeletableEdge,
+  automatic: AutomaticEdge,
 };
 
 const defaultEdgeOptions = {
-  type: "deletable",
+  type: "automatic",
   animated: false,
 };
 
@@ -68,7 +62,6 @@ export interface BuilderCanvasProps {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
   onNodesChange: OnNodesChange<BuilderNode>;
-  onEdgesChange: OnEdgesChange<BuilderEdge>;
   onNodeSelect: (nodeId: string | null, data: QuestionNodeData | null) => void;
   onAddNode: (node: BuilderNode) => void;
   readOnly?: boolean;
@@ -78,22 +71,12 @@ export function BuilderCanvas({
   nodes,
   edges,
   onNodesChange,
-  onEdgesChange,
   onNodeSelect,
   readOnly = false,
 }: BuilderCanvasProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: CANVAS_DROP_ZONE_ID,
   });
-
-  const { setEdges } = useReactFlow();
-
-  const onConnect: OnConnect = useCallback(
-    (connection) => {
-      setEdges((eds) => addEdge({ ...connection, type: "deletable" }, eds));
-    },
-    [setEdges]
-  );
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -125,28 +108,17 @@ export function BuilderCanvas({
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={readOnly ? undefined : onConnect}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
-        deleteKeyCode={readOnly ? null : ["Backspace", "Delete"]}
+        deleteKeyCode={null}
         nodesDraggable={!readOnly}
-        nodesConnectable={!readOnly}
+        nodesConnectable={false}
         nodesFocusable={!readOnly}
-        elementsSelectable={!readOnly}
+        elementsSelectable={false}
         panOnDrag
-        isValidConnection={(connection) => {
-          if (
-            connection.source === SUBMIT_NODE_ID ||
-            connection.target === START_NODE_ID
-          ) {
-            return false;
-          }
-          return true;
-        }}
         fitView
         fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
         minZoom={0.2}
