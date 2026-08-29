@@ -9,12 +9,24 @@ import {
   BarChart3,
   FileText,
   Check,
+  Download,
   ExternalLink,
+  Loader2,
+  QrCode,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -56,6 +68,51 @@ export default function FormOverviewPage() {
   };
 
   const [copied, setCopied] = useState(false);
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [isGeneratingQrCode, setIsGeneratingQrCode] = useState(false);
+  const currentForm = formQuery.data?.form;
+  const publicFormUrl =
+    typeof window !== "undefined" && currentForm
+      ? `${window.location.origin}/f/${currentForm.publicId}`
+      : "";
+
+  useEffect(() => {
+    if (
+      !isQrDialogOpen ||
+      currentForm?.status !== "published" ||
+      !publicFormUrl
+    ) {
+      return;
+    }
+
+    let isCurrent = true;
+    setIsGeneratingQrCode(true);
+    setQrCodeDataUrl(null);
+
+    void QRCode.toDataURL(publicFormUrl, {
+      width: 1024,
+      margin: 2,
+      errorCorrectionLevel: "M",
+      color: {
+        dark: "#111827",
+        light: "#FFFFFF",
+      },
+    })
+      .then((dataUrl) => {
+        if (isCurrent) setQrCodeDataUrl(dataUrl);
+      })
+      .catch(() => {
+        if (isCurrent) toast.error("Unable to generate the QR code.");
+      })
+      .finally(() => {
+        if (isCurrent) setIsGeneratingQrCode(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentForm?.publicId, currentForm?.status, isQrDialogOpen, publicFormUrl]);
 
   const handleCopyLink = async () => {
     if (!formQuery.data) return;
@@ -83,6 +140,15 @@ export default function FormOverviewPage() {
   }
 
   const { form, questions } = formQuery.data;
+
+  const handleDownloadQrCode = () => {
+    if (!qrCodeDataUrl || !currentForm) return;
+
+    const link = document.createElement("a");
+    link.href = qrCodeDataUrl;
+    link.download = `blueprint-${currentForm.publicId}-qr.png`;
+    link.click();
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -145,7 +211,7 @@ export default function FormOverviewPage() {
                     readOnly
                     value={
                       form.status === "published"
-                        ? `${typeof window !== "undefined" ? window.location.origin : ""}/f/${form.publicId}`
+                        ? publicFormUrl
                         : "Form must be published to share"
                     }
                     className="h-9 text-[11px] font-mono bg-secondary/40 border-border text-foreground pr-2 font-medium select-all"
@@ -178,6 +244,18 @@ export default function FormOverviewPage() {
                   )}
                 </Button>
 
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsQrDialogOpen(true)}
+                  disabled={form.status !== "published"}
+                  className="h-9 w-9 border-border bg-secondary/40 hover:bg-secondary/80 text-foreground shrink-0"
+                  aria-label="Show QR code"
+                  title="Show QR code"
+                >
+                  <QrCode className="h-3.5 w-3.5" />
+                </Button>
+
                 {form.status === "published" && (
                   <Button
                     variant="outline"
@@ -191,6 +269,44 @@ export default function FormOverviewPage() {
                 )}
               </div>
             </div>
+
+            <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Share with QR code</DialogTitle>
+                  <DialogDescription>
+                    Scan this code to open the public form.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="flex min-h-64 items-center justify-center rounded-lg border border-border bg-white p-4">
+                  {isGeneratingQrCode && (
+                    <Loader2
+                      className="h-6 w-6 animate-spin text-primary"
+                      aria-label="Generating QR code"
+                    />
+                  )}
+                  {!isGeneratingQrCode && qrCodeDataUrl && (
+                    <img
+                      src={qrCodeDataUrl}
+                      alt={`QR code for ${form.title}`}
+                      className="h-56 w-56 max-w-full object-contain"
+                    />
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    onClick={handleDownloadQrCode}
+                    disabled={!qrCodeDataUrl || isGeneratingQrCode}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download QR code
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {form.status === "draft" && (
               <Button
