@@ -25,6 +25,7 @@ import { ComponentLibrary } from "./ComponentLibrary";
 import { BuilderCanvas } from "./BuilderCanvas";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { useDebouncedCallback } from "@/lib/useDebouncedCallback";
+import { cn } from "@/lib/utils";
 import { type BuilderData } from "@/features/forms/api";
 import { useBuilderQuery, useFormMutations, useFormQuery } from "@/features/forms/queries";
 import type { FormRecord } from "@/lib/forms";
@@ -34,25 +35,15 @@ import {
   type QuestionNodeData,
   type QuestionType,
   type QuestionOption,
+  type QuestionFlowNode,
   QUESTION_TYPE_META,
   CANVAS_DROP_ZONE_ID,
   START_NODE_ID,
   SUBMIT_NODE_ID,
+  generateId,
 } from "./types";
 import { serializeBuilder } from "./builder-serialization";
 import { createAutomaticEdges, haveSameEdges } from "./automatic-flow";
-
-// ─── Safe UUID generator ───────────────────────────────────────────────────
-function generateUUID(): string {
-  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 // ─── Drag overlay preview card ───────────────────────────────────────────
 function DragPreviewCard({ questionType }: { questionType: QuestionType }) {
@@ -135,10 +126,7 @@ function FormBuilderInner() {
           },
     }));
 
-    const orderedQuestions = [...backendNodes].sort(
-      (left, right) =>
-        left.position.y - right.position.y || left.position.x - right.position.x || left.id.localeCompare(right.id),
-    );
+    const orderedQuestions = backendNodes;
     const firstQuestionNode = orderedQuestions[0];
     const lastQuestionNode = orderedQuestions.at(-1);
 
@@ -167,11 +155,33 @@ function FormBuilderInner() {
             position: submitPosition,
             data: { label: "Submit" },
             deletable: false,
-            draggable: true,
+            draggable: false,
           },
     ];
 
-    const finalEdges = createAutomaticEdges(finalNodes);
+    const persistedEdges: BuilderEdge[] = builderData.edges.map((edge) => ({
+      id: `edge_${edge.condition ? "branch" : "fallback"}_${edge.source}_to_${edge.target ?? SUBMIT_NODE_ID}_${edge.orderIndex}`,
+      source: edge.source,
+      target: edge.target ?? SUBMIT_NODE_ID,
+      type: "automatic",
+      data: {
+        condition: edge.condition,
+        kind: edge.condition ? "branch" : "fallback",
+        orderIndex: edge.orderIndex,
+        label: edge.condition
+          ? `Rule ${edge.orderIndex + 1}`
+          : edge.target === null
+            ? "Submit"
+            : "Otherwise",
+      },
+    }));
+    const fallbackSources = new Set(
+      persistedEdges.filter((edge) => edge.data?.kind === "fallback").map((edge) => edge.source),
+    );
+    const finalEdges = [
+      ...createAutomaticEdges(finalNodes).filter((edge) => !fallbackSources.has(edge.source)),
+      ...persistedEdges,
+    ];
 
     hasHydratedBuilderRef.current = true;
     isInitialMountRef.current = true;
@@ -180,14 +190,85 @@ function FormBuilderInner() {
     setIsLoaded(true);
   }, [builderQuery.data, formQuery.data, setEdges, setNodes]);
 
-  // Keep the linear graph in sync with the visual order on the canvas.
+  // Keep the derived sequential path in sync without touching branch rules.
   useEffect(() => {
     if (!isLoaded) return;
 
-    const automaticEdges = createAutomaticEdges(nodes);
     setEdges((currentEdges) =>
-      haveSameEdges(currentEdges, automaticEdges) ? currentEdges : automaticEdges,
+      {
+        const persistedEdges = currentEdges.filter((edge) => edge.data?.kind !== "sequence");
+        const fallbackSources = new Set(
+          persistedEdges.filter((edge) => edge.data?.kind === "fallback").map((edge) => edge.source),
+        );
+        const automaticEdges = createAutomaticEdges(nodes).filter(
+          (edge) => !fallbackSources.has(edge.source),
+        );
+        const nextEdges = [...automaticEdges, ...persistedEdges];
+        return haveSameEdges(currentEdges, nextEdges) ? currentEdges : nextEdges;
+      },
     );
+  }, [isLoaded, nodes, setEdges]);
+
+  // Keep Submit centered below every question that can end the form.
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const submitSources = new Set(
+      edges.filter((edge) => edge.target === SUBMIT_NODE_ID).map((edge) => edge.source),
+    );
+    const sourceNodes = nodes.filter(
+      (node): node is QuestionFlowNode => node.type === "question" && submitSources.has(node.id),
+    );
+    const submitNode = nodes.find((node) => node.id === SUBMIT_NODE_ID);
+    if (!sourceNodes.length || !submitNode) return;
+
+    const sourceCenterX = sourceNodes.reduce(
+      (total, node) => total + node.position.x + (node.measured?.width ?? 256) / 2,
+      0,
+    ) / sourceNodes.length;
+    const position = {
+      x: sourceCenterX - (submitNode.measured?.width ?? 128) / 2,
+      y: Math.max(
+        ...sourceNodes.map(
+          (node) => node.position.y + (node.measured?.height ?? 100),
+        ),
+      ) + 80,
+    };
+
+    if (
+      submitNode.position.x === position.x &&
+      submitNode.position.y === position.y
+    ) return;
+
+    setNodes((current) => current.map((node) =>
+      node.id === SUBMIT_NODE_ID ? { ...node, position } : node,
+    ));
+  }, [edges, isLoaded, nodes, setNodes]);
+
+  // Remove routes and conditions whose referenced questions/options were deleted.
+  useEffect(() => {
+    if (!isLoaded) return;
+    const questionNodes = nodes.filter((node): node is QuestionFlowNode => node.type === "question");
+    const questionIds = new Set(questionNodes.map((node) => node.id));
+    const optionIds = new Set(questionNodes.flatMap((node) => node.data.options.map((option) => option.id)));
+    setEdges((current) => {
+      const next = current.flatMap((edge) => {
+        if (edge.source !== START_NODE_ID && !questionIds.has(edge.source)) return [];
+        if (edge.target !== SUBMIT_NODE_ID && !questionIds.has(edge.target)) return [];
+        const group = edge.data?.condition;
+        if (!group) return [edge];
+        const conditions = group.conditions.filter((condition) => {
+          if (!questionIds.has(condition.questionId)) return false;
+          if (condition.kind === "option") return optionIds.has(condition.optionId);
+          if (condition.kind === "checkbox") return condition.optionIds.every((id) => optionIds.has(id));
+          return true;
+        });
+        return conditions.length
+          ? [{ ...edge, data: { ...edge.data!, condition: { ...group, conditions } } }]
+          : [];
+      });
+      return JSON.stringify(next) === JSON.stringify(current) ? current : next;
+    });
   }, [isLoaded, nodes, setEdges]);
 
   useEffect(() => {
@@ -292,7 +373,7 @@ function FormBuilderInner() {
         const position = rfInstance.screenToFlowPosition(pointerRef.current);
 
         const newNode: BuilderNode = {
-          id: generateUUID(),
+          id: generateId(),
           type: "question",
           position: {
             x: position.x - 128, // centre the 256px-wide card
@@ -466,9 +547,13 @@ function FormBuilderInner() {
           />
 
           {/* Right sidebar */}
-          <div className={isReadOnly ? "pointer-events-none opacity-55" : undefined}>
+          <div className={cn("h-full min-h-0 shrink-0", isReadOnly && "pointer-events-none opacity-55")}>
             <PropertiesPanel
+              selectedNodeId={selectedNodeId}
               selectedNodeData={selectedNodeData}
+              questions={nodes.filter((node): node is QuestionFlowNode => node.type === "question")}
+              edges={edges}
+              onEdgesChange={setEdges}
               formTitle={form.title}
               formDescription={form.description || ""}
               onFormTitleChange={handleFormTitleChange}

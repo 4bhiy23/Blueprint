@@ -54,6 +54,7 @@ export interface FormResponseSummary {
   id: string;
   submittedAt: string;
   completionMs: number | null;
+  questionIds: string[];
   answers?: Array<{
     questionId: string;
     answer: string;

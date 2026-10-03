@@ -1,6 +1,7 @@
 import { apiFetch, apiFetchBlob } from "@/lib/api";
 import type {
   BuilderInput,
+  BuilderEdgeInput,
   FormAvailabilityStatus,
   QuestionType,
   SubmitResponseInput,
@@ -45,6 +46,8 @@ export interface PublicFormResponse {
   expiresAt?: string | null;
   form?: PublicForm;
   questions?: PublicQuestion[];
+  firstQuestionId?: string | null;
+  edges?: BuilderEdgeInput[];
 }
 
 export type BuilderData = BuilderInput;

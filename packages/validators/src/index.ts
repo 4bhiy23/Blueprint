@@ -109,10 +109,38 @@ export const BuilderNodeSchema = z
   })
   .strict();
 
+export const RouteConditionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("option"),
+    questionId: z.string().uuid(),
+    operator: z.enum(["is", "isNot"]),
+    optionId: z.string().uuid(),
+  }).strict(),
+  z.object({
+    kind: z.literal("checkbox"),
+    questionId: z.string().uuid(),
+    operator: z.enum(["contains", "containsAny", "containsAll"]),
+    optionIds: z.array(z.string().uuid()).min(1),
+  }).strict(),
+  z.object({
+    kind: z.literal("rating"),
+    questionId: z.string().uuid(),
+    operator: z.enum(["eq", "lt", "lte", "gt", "gte"]),
+    value: z.number().int().min(1),
+  }).strict(),
+]);
+
+export const RouteConditionGroupSchema = z.object({
+  match: z.enum(["all", "any"]),
+  conditions: z.array(RouteConditionSchema).min(1).max(10),
+}).strict();
+
 export const BuilderEdgeSchema = z
   .object({
     source: z.string().uuid(),
-    target: z.string().uuid(),
+    target: z.string().uuid().nullable(),
+    condition: RouteConditionGroupSchema.nullable(),
+    orderIndex: z.number().int().nonnegative().default(0),
   })
   .strict();
 
@@ -188,3 +216,71 @@ export type FormStatus = z.infer<typeof FormStatusSchema>;
 export type FormAvailabilityStatus = z.infer<typeof FormAvailabilityStatusSchema>;
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 export type QuestionOptionType = z.infer<typeof QuestionOptionTypeSchema>;
+export type RouteCondition = z.infer<typeof RouteConditionSchema>;
+export type RouteConditionGroup = z.infer<typeof RouteConditionGroupSchema>;
+export type BuilderEdgeInput = z.infer<typeof BuilderEdgeSchema>;
+
+export interface RouteAnswer {
+  value?: string;
+  optionIds?: string[];
+}
+
+function conditionMatches(
+  condition: RouteCondition,
+  answers: Record<string, RouteAnswer | undefined>,
+) {
+  const answer = answers[condition.questionId];
+  if (!answer) return false;
+
+  if (condition.kind === "rating") {
+    const rating = Number(answer.value);
+    if (!Number.isFinite(rating)) return false;
+    if (condition.operator === "eq") return rating === condition.value;
+    if (condition.operator === "lt") return rating < condition.value;
+    if (condition.operator === "lte") return rating <= condition.value;
+    if (condition.operator === "gt") return rating > condition.value;
+    return rating >= condition.value;
+  }
+
+  const selected = new Set(answer.optionIds ?? []);
+  if (condition.kind === "option") {
+    const matches = selected.has(condition.optionId);
+    return condition.operator === "is" ? matches : !matches;
+  }
+
+  if (condition.operator === "contains") {
+    return selected.has(condition.optionIds[0]);
+  }
+  if (condition.operator === "containsAny") {
+    return condition.optionIds.some((optionId) => selected.has(optionId));
+  }
+  return condition.optionIds.every((optionId) => selected.has(optionId));
+}
+
+export function resolveNextQuestion(
+  questionId: string,
+  answers: Record<string, RouteAnswer | undefined>,
+  questionOrder: string[],
+  edges: BuilderEdgeInput[],
+): string | null {
+  const outgoing = edges
+    .filter((edge) => edge.source === questionId)
+    .sort((left, right) => left.orderIndex - right.orderIndex);
+  const matched = outgoing.find((edge) => {
+    if (!edge.condition) return false;
+    const results = edge.condition.conditions.map((condition) =>
+      conditionMatches(condition, answers),
+    );
+    return edge.condition.match === "all"
+      ? results.every(Boolean)
+      : results.some(Boolean);
+  });
+
+  if (matched) return matched.target;
+
+  const fallback = outgoing.find((edge) => edge.condition === null);
+  if (fallback) return fallback.target;
+
+  const currentIndex = questionOrder.indexOf(questionId);
+  return currentIndex === -1 ? null : questionOrder[currentIndex + 1] ?? null;
+}

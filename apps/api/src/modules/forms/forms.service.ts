@@ -12,7 +12,7 @@ import {
   responses,
   sql,
 } from "@repo/db";
-import type { UpdateFormInput } from "@repo/validators";
+import type { RouteConditionGroup, UpdateFormInput } from "@repo/validators";
 export { DuplicateResponseError, FormSettingsValidationError, FormUnavailableError, getAvailabilityStatus } from "./form-availability.service.js";
 export { SubmissionValidationError, getPublicFormForResponder, submitResponseForPublicForm } from "./form-submission.service.js";
 export { getResponseForUser, getResponsesCsvExportForUser, listResponsesForUser } from "./form-responses.service.js";
@@ -320,12 +320,16 @@ export async function duplicateFormForUser(input: {
           orderIndex: sourceQuestion.orderIndex,
           positionX: sourceQuestion.positionX,
           positionY: sourceQuestion.positionY,
+          ratingMax: sourceQuestion.ratingMax,
+          ratingLowLabel: sourceQuestion.ratingLowLabel,
+          ratingHighLabel: sourceQuestion.ratingHighLabel,
         })
         .returning();
 
       questionIdMap.set(sourceQuestion.id, newQuestion.id);
     }
 
+    const optionIdMap = new Map<string, string>();
     if (sourceQuestions.length > 0) {
       const sourceQuestionIds = sourceQuestions.map((question) => question.id);
       const sourceOptions = await tx.query.questionOptions.findMany({
@@ -341,11 +345,12 @@ export async function duplicateFormForUser(input: {
           continue;
         }
 
-        await tx.insert(questionOptions).values({
+        const [newOption] = await tx.insert(questionOptions).values({
           questionId: nextQuestionId,
           label: sourceOption.label,
           orderIndex: sourceOption.orderIndex,
-        });
+        }).returning({ id: questionOptions.id });
+        optionIdMap.set(sourceOption.id, newOption.id);
       }
     }
 
@@ -355,16 +360,35 @@ export async function duplicateFormForUser(input: {
 
     for (const sourceEdge of sourceEdges) {
       const sourceQuestionId = questionIdMap.get(sourceEdge.sourceQuestionId);
-      const targetQuestionId = questionIdMap.get(sourceEdge.targetQuestionId);
+      const targetQuestionId = sourceEdge.targetQuestionId
+        ? questionIdMap.get(sourceEdge.targetQuestionId)
+        : null;
 
-      if (!sourceQuestionId || !targetQuestionId) {
+      if (!sourceQuestionId || (sourceEdge.targetQuestionId && !targetQuestionId)) {
         continue;
       }
+
+      const sourceCondition = sourceEdge.condition as RouteConditionGroup | null;
+      const condition = sourceCondition ? {
+            ...sourceCondition,
+            conditions: sourceCondition.conditions.map((item) => {
+              const questionId = questionIdMap.get(item.questionId) ?? item.questionId;
+              if (item.kind === "option") {
+                return { ...item, questionId, optionId: optionIdMap.get(item.optionId) ?? item.optionId };
+              }
+              if (item.kind === "checkbox") {
+                return { ...item, questionId, optionIds: item.optionIds.map((id) => optionIdMap.get(id) ?? id) };
+              }
+              return { ...item, questionId };
+            }),
+          } : null;
 
       await tx.insert(questionEdges).values({
         formId: newForm.id,
         sourceQuestionId,
         targetQuestionId,
+        condition,
+        orderIndex: sourceEdge.orderIndex,
       });
     }
 

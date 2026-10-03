@@ -1,5 +1,5 @@
-import { and, answers, db, eq, forms, inArray, questionOptions, questions, responses, sql } from "@repo/db";
-import type { SubmitAnswerInput } from "@repo/validators";
+import { and, answers, db, eq, forms, inArray, questionEdges, questionOptions, questions, responses, sql } from "@repo/db";
+import { resolveNextQuestion, type BuilderEdgeInput, type RouteConditionGroup, type SubmitAnswerInput } from "@repo/validators";
 import { DuplicateResponseError, FormUnavailableError, getAvailabilityStatus, getResponseCountsByFormId } from "./form-availability.service.js";
 
 export class SubmissionValidationError extends Error {
@@ -83,6 +83,10 @@ export async function getPublicFormForResponder(publicId: string, ipHash?: strin
         orderBy: (optionsTable, { asc }) => [asc(optionsTable.orderIndex)],
       })
     : [];
+  const formEdges = await db.query.questionEdges.findMany({
+    where: (edgesTable, { eq }) => eq(edgesTable.formId, form.id),
+    orderBy: (edgesTable, { asc }) => [asc(edgesTable.orderIndex)],
+  });
   return {
     alreadySubmitted: false as const,
     availabilityStatus: "accepting" as const,
@@ -92,6 +96,13 @@ export async function getPublicFormForResponder(publicId: string, ipHash?: strin
       title: form.title,
       description: form.description,
     },
+    firstQuestionId: form.firstQuestionId ?? formQuestions[0]?.id ?? null,
+    edges: formEdges.map((edge) => ({
+      source: edge.sourceQuestionId,
+      target: edge.targetQuestionId,
+      condition: edge.condition as RouteConditionGroup | null,
+      orderIndex: edge.orderIndex,
+    })),
     questions: formQuestions.map((question) => ({
       id: question.id,
       title: question.title,
@@ -156,6 +167,15 @@ export async function submitResponseForPublicForm(input: {
           inArray(optionsTable.questionId, questionIds),
       })
     : [];
+  const formEdges: BuilderEdgeInput[] = (await db.query.questionEdges.findMany({
+    where: (edgesTable, { eq }) => eq(edgesTable.formId, form.id),
+    orderBy: (edgesTable, { asc }) => [asc(edgesTable.orderIndex)],
+  })).map((edge) => ({
+    source: edge.sourceQuestionId,
+    target: edge.targetQuestionId,
+    condition: edge.condition as RouteConditionGroup | null,
+    orderIndex: edge.orderIndex,
+  }));
 
   const questionsById = new Map(formQuestions.map((question) => [question.id, question]));
   const validOptionIdsByQuestionId = new Map<string, Set<string>>();
@@ -180,13 +200,38 @@ export async function submitResponseForPublicForm(input: {
     answersByQuestionId.set(answer.questionId, answer);
   }
 
+  const routeAnswers = Object.fromEntries(
+    [...answersByQuestionId].map(([questionId, answer]) => [questionId, {
+      value: answer.value,
+      optionIds: answer.optionIds,
+    }]),
+  );
+  const reachableQuestionIds = new Set<string>();
+  let routeQuestionId: string | null = form.firstQuestionId ?? formQuestions[0]?.id ?? null;
+  while (routeQuestionId) {
+    if (reachableQuestionIds.has(routeQuestionId)) {
+      throw new SubmissionValidationError("The form routing contains a cycle.");
+    }
+    if (!questionsById.has(routeQuestionId)) {
+      throw new SubmissionValidationError("The form routing references a missing question.");
+    }
+    reachableQuestionIds.add(routeQuestionId);
+    routeQuestionId = resolveNextQuestion(routeQuestionId, routeAnswers, questionIds, formEdges);
+  }
+
+  for (const questionId of answersByQuestionId.keys()) {
+    if (!reachableQuestionIds.has(questionId)) {
+      throw new SubmissionValidationError("Submission contains an answer from a hidden question.");
+    }
+  }
+
   const answerRows: {
     questionId: string;
     optionIds: string[];
     value: string | null;
   }[] = [];
 
-  for (const question of formQuestions) {
+  for (const question of formQuestions.filter((item) => reachableQuestionIds.has(item.id))) {
     const answer = answersByQuestionId.get(question.id);
     const validOptionIds = validOptionIdsByQuestionId.get(question.id) ?? new Set<string>();
     const optionIds = answer?.optionIds ?? [];
@@ -199,6 +244,7 @@ export async function submitResponseForPublicForm(input: {
             `Question "${question.title}" is required.`,
           );
         }
+        answerRows.push({ questionId: question.id, optionIds: [], value: null });
         continue;
       }
 
@@ -232,6 +278,7 @@ export async function submitResponseForPublicForm(input: {
           `Question "${question.title}" is required.`,
         );
       }
+      answerRows.push({ questionId: question.id, optionIds: [], value: null });
       continue;
     }
 

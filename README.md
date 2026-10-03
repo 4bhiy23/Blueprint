@@ -61,13 +61,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-`packages/db/.env`
-
-```env
-DATABASE_URL=postgresql://...
-```
-
-Apply the database schema, then start both applications:
+Drizzle uses `apps/api/.env` as the local database source of truth. Apply the database schema, then start both applications:
 
 ```bash
 pnpm --filter @repo/db push

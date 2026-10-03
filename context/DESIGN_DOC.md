@@ -17,7 +17,7 @@ $$\text{Sign In} \longrightarrow \text{Dashboard} \longrightarrow \text{Create F
 - **Form (`forms`)**: The owner-managed root resource containing metadata (`title`, `description`, `status`, `publicId`).
 - **Question (`questions`)**: A field node on the builder canvas (`text`, `number`, `email`, `select`, `radio`, `checkbox`).
 - **Option (`question_options`)**: Standardized selectable choices associated with choice-based questions (`select`, `radio`, `checkbox`).
-- **Builder Graph (`question_edges`)**: Persisted graph connections between questions representing flow direction. Validated as a connected linear path in MVP.
+- **Builder Flow (`question_edges`)**: Questions have a canonical order. `question_edges` stores explicit conditional jumps only; normal continuation is derived from question order.
 - **Public ID**: A shareable, non-UUID identifier starting with `frm_` used for public responder URLs (`/f/:publicId`).
 - **Response (`responses`) / Answer (`answers`)**: Records of respondent submissions capturing completion time, hashed metadata, and individual question answers.
 
@@ -156,10 +156,10 @@ In accordance with our **`frontend-design`** standards, Blueprint adheres to a p
 
 ### Graph Validation Rules
 When `PUT /api/v2/forms/:id/builder` is invoked, the API transactionally validates:
-1. **Connectivity**: All questions form a single connected path from `firstQuestionId`.
-2. **Acyclicity**: Graph contains zero cycles.
-3. **Linear Path**: In MVP, every non-terminal question has exactly 1 outgoing edge.
-4. **Valid Types**: Choice-based types (`select`, `radio`, `checkbox`) must contain at least 1 valid option.
+1. **Question order**: The first ordered question is the entry point and unmatched rules continue to the next ordered question.
+2. **Forward branches**: Explicit rules can target a later question or submit the form.
+3. **Rule priority**: Outgoing branch rules have unique priorities and the first match wins.
+4. **Valid conditions**: Stacked `all`/`any` conditions may reference current or earlier option, checkbox, and rating questions.
 
 ### API v2 Route Specification
 

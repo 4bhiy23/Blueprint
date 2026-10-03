@@ -1,24 +1,16 @@
 import type { BuilderEdge, BuilderNode, QuestionFlowNode } from "./types";
 import { START_NODE_ID, SUBMIT_NODE_ID } from "./types";
 
-/**
- * The canvas is the source of truth for question order. Questions are read
- * from top to bottom, with the horizontal position settling ties on a row.
- */
-export function getQuestionsInCanvasOrder(
+/** Question array order is the form order. Canvas coordinates are layout only. */
+export function getQuestionsInOrder(
   nodes: BuilderNode[],
 ): QuestionFlowNode[] {
-  return nodes
-    .filter((node): node is QuestionFlowNode => node.type === "question")
-    .sort(
-      (left, right) =>
-        left.position.y - right.position.y || left.position.x - right.position.x || left.id.localeCompare(right.id),
-    );
+  return nodes.filter((node): node is QuestionFlowNode => node.type === "question");
 }
 
 /** Builds the complete display graph, including the non-persisted start/end nodes. */
 export function createAutomaticEdges(nodes: BuilderNode[]): BuilderEdge[] {
-  const questions = getQuestionsInCanvasOrder(nodes);
+  const questions = getQuestionsInOrder(nodes);
   if (questions.length === 0) return [];
 
   const firstQuestion = questions[0];
@@ -29,6 +21,7 @@ export function createAutomaticEdges(nodes: BuilderNode[]): BuilderEdge[] {
       source: START_NODE_ID,
       target: firstQuestion.id,
       type: "automatic",
+      data: { condition: null, kind: "sequence", orderIndex: 0, label: "Start" },
     },
   ];
 
@@ -40,6 +33,7 @@ export function createAutomaticEdges(nodes: BuilderNode[]): BuilderEdge[] {
       source,
       target,
       type: "automatic",
+      data: { condition: null, kind: "sequence", orderIndex: 0, label: "Otherwise" },
     });
   }
 
@@ -48,6 +42,7 @@ export function createAutomaticEdges(nodes: BuilderNode[]): BuilderEdge[] {
     source: lastQuestion.id,
     target: SUBMIT_NODE_ID,
     type: "automatic",
+    data: { condition: null, kind: "sequence", orderIndex: 0, label: "Submit" },
   });
 
   return edges;

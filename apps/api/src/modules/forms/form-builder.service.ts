@@ -1,5 +1,5 @@
 import { and, db, eq, forms, inArray, notInArray, questionEdges, questionOptions, questions } from "@repo/db";
-import { QUESTION_OPTION_TYPES, type BuilderInput } from "@repo/validators";
+import { QUESTION_OPTION_TYPES, type BuilderInput, type RouteConditionGroup } from "@repo/validators";
 
 export class FormEditingLockedError extends Error {
   constructor() {
@@ -41,10 +41,10 @@ export class BuilderValidationError extends Error {
   }
 }
 
-function validateBuilderGraph(builder: BuilderInput) {
+function validateBuilderRules(builder: BuilderInput) {
   if (builder.nodes.length === 0) {
     if (builder.edges.length > 0) {
-      throw new BuilderValidationError("Edges cannot be saved without nodes.");
+      throw new BuilderValidationError("Branch rules cannot be saved without questions.");
     }
 
     return {
@@ -55,6 +55,10 @@ function validateBuilderGraph(builder: BuilderInput) {
 
   const nodeIds = new Set<string>();
   const optionIds = new Set<string>();
+  const nodesById = new Map(builder.nodes.map((node) => [node.id, node]));
+  const order = builder.nodes.map((node) => node.id);
+  const orderIndex = new Map(order.map((id, index) => [id, index]));
+  const optionQuestionId = new Map<string, string>();
   for (const node of builder.nodes) {
     if (nodeIds.has(node.id)) {
       throw new BuilderValidationError("Builder graph contains duplicate node ids.");
@@ -81,6 +85,7 @@ function validateBuilderGraph(builder: BuilderInput) {
       }
 
       optionIds.add(option.id);
+      optionQuestionId.set(option.id, node.id);
     }
 
     if (node.type === "rating" && node.data.ratingMax < 1) {
@@ -88,59 +93,72 @@ function validateBuilderGraph(builder: BuilderInput) {
     }
   }
 
-  const incoming = new Map<string, number>();
-  const outgoing = new Map<string, string>();
+  const edgeOrderBySource = new Map<string, Set<number>>();
+  const fallbackSources = new Set<string>();
 
   for (const edge of builder.edges) {
-    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
-      throw new BuilderValidationError("Builder graph contains an edge with a missing node.");
+    if (!nodeIds.has(edge.source) || (edge.target && !nodeIds.has(edge.target))) {
+      throw new BuilderValidationError("A branch rule references a missing question.");
     }
 
     if (edge.source === edge.target) {
-      throw new BuilderValidationError("Builder graph cannot contain self-referencing edges.");
+      throw new BuilderValidationError("A branch cannot return to the same question.");
     }
 
-    if (outgoing.has(edge.source)) {
-      throw new BuilderValidationError("Each question can have at most one outgoing edge.");
+    if (edge.condition) {
+      const usedOrders = edgeOrderBySource.get(edge.source) ?? new Set<number>();
+      if (usedOrders.has(edge.orderIndex)) {
+        throw new BuilderValidationError("Branch rules after one question must have unique priorities.");
+      }
+      usedOrders.add(edge.orderIndex);
+      edgeOrderBySource.set(edge.source, usedOrders);
+    } else {
+      if (fallbackSources.has(edge.source)) {
+        throw new BuilderValidationError("Each question can have at most one fallback route.");
+      }
+      fallbackSources.add(edge.source);
     }
 
-    outgoing.set(edge.source, edge.target);
-    incoming.set(edge.target, (incoming.get(edge.target) ?? 0) + 1);
-
-    if ((incoming.get(edge.target) ?? 0) > 1) {
-      throw new BuilderValidationError("Each non-start question must have exactly one incoming edge.");
-    }
-  }
-
-  const startNodeIds = builder.nodes
-    .map((node) => node.id)
-    .filter((nodeId) => !incoming.has(nodeId));
-
-  if (startNodeIds.length !== 1) {
-    throw new BuilderValidationError("Builder graph must contain exactly one start node.");
-  }
-
-  const startNodeId = startNodeIds[0];
-  const order: string[] = [];
-  const visited = new Set<string>();
-  let currentNodeId: string | undefined = startNodeId;
-
-  while (currentNodeId) {
-    if (visited.has(currentNodeId)) {
-      throw new BuilderValidationError("Builder graph cannot contain cycles.");
+    if (edge.target && (orderIndex.get(edge.target) ?? -1) <= (orderIndex.get(edge.source) ?? -1)) {
+      throw new BuilderValidationError("A branch can only go to a later question or submit the form.");
     }
 
-    visited.add(currentNodeId);
-    order.push(currentNodeId);
-    currentNodeId = outgoing.get(currentNodeId);
-  }
+    for (const condition of edge.condition?.conditions ?? []) {
+      const referencedQuestion = nodesById.get(condition.questionId);
+      if (!referencedQuestion) {
+        throw new BuilderValidationError("A route condition references a missing question.");
+      }
+      if ((orderIndex.get(condition.questionId) ?? 0) > (orderIndex.get(edge.source) ?? 0)) {
+        throw new BuilderValidationError("Route conditions can only use the current or an earlier question.");
+      }
+      if (condition.kind === "rating") {
+        if (referencedQuestion.type !== "rating") {
+          throw new BuilderValidationError("Rating conditions must reference a rating question.");
+        }
+        if (condition.value > referencedQuestion.data.ratingMax) {
+          throw new BuilderValidationError("A rating condition exceeds the question's rating scale.");
+        }
+      } else if (condition.kind === "checkbox") {
+        if (referencedQuestion.type !== "checkbox") {
+          throw new BuilderValidationError("Checkbox conditions must reference a checkbox question.");
+        }
+        if (condition.optionIds.some((id) => optionQuestionId.get(id) !== condition.questionId)) {
+          throw new BuilderValidationError("A checkbox condition contains an invalid option.");
+        }
+      } else {
+        if (referencedQuestion.type !== "select" && referencedQuestion.type !== "radio") {
+          throw new BuilderValidationError("Option conditions must reference a select or radio question.");
+        }
+        if (optionQuestionId.get(condition.optionId) !== condition.questionId) {
+          throw new BuilderValidationError("An option condition contains an invalid option.");
+        }
+      }
+    }
 
-  if (visited.size !== builder.nodes.length) {
-    throw new BuilderValidationError("Every question must be connected to the start node.");
   }
 
   return {
-    firstQuestionId: startNodeId,
+    firstQuestionId: order[0] ?? null,
     order,
   };
 }
@@ -186,6 +204,8 @@ export async function getBuilderForUser(input: {
     edges: formEdges.map((edge) => ({
       source: edge.sourceQuestionId,
       target: edge.targetQuestionId,
+      condition: edge.condition as RouteConditionGroup | null,
+      orderIndex: edge.orderIndex,
     })),
     viewport: form.builderViewport ?? {},
   };
@@ -197,7 +217,7 @@ export async function saveBuilderForUser(input: {
   builder: BuilderInput;
 }) {
   return db.transaction(async (tx) => {
-    const { firstQuestionId, order } = validateBuilderGraph(input.builder);
+    const { firstQuestionId, order } = validateBuilderRules(input.builder);
     const form = await tx.query.forms.findFirst({
       where: (formsTable, { and, eq }) =>
         and(
@@ -342,6 +362,8 @@ export async function saveBuilderForUser(input: {
           formId: input.formId,
           sourceQuestionId: edge.source,
           targetQuestionId: edge.target,
+          condition: edge.condition,
+          orderIndex: edge.orderIndex,
         })),
       );
     }

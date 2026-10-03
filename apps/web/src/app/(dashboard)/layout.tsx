@@ -136,9 +136,9 @@ export default function DashboardLayout({
                 <Link key={link.label} href={link.href}>
                   <span
                     className={cn(
-                      "px-3.5 py-1.5 text-xs font-extrabold transition-all cursor-pointer border-2 border-transparent font-mono rounded-lg",
+                      "px-3.5 py-1.5 text-xs font-extrabold transition-all cursor-pointer border-2 border-transparent font-mono rounded-lg bg-transparent",
                       isActive
-                        ? "bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))] border-[hsl(var(--foreground))] shadow-[2px_2px_0px_0px_hsl(var(--foreground))]"
+                        ? "text-[hsl(var(--primary))] border-[hsl(var(--foreground))] shadow-[2px_2px_0px_0px_hsl(var(--foreground))] underline decoration-2 underline-offset-4 decoration-[hsl(var(--primary))]"
                         : "text-slate-600 hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--foreground))/0.4]"
                     )}
                   >

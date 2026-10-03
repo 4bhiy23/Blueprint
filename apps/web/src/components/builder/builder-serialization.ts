@@ -27,8 +27,13 @@ export function serializeBuilder(
       },
     })),
     edges: edges
-      .filter((edge) => edge.source !== START_NODE_ID && edge.target !== SUBMIT_NODE_ID)
-      .map((edge) => ({ source: edge.source, target: edge.target })),
+      .filter((edge) => edge.source !== START_NODE_ID && edge.data?.kind !== "sequence")
+      .map((edge) => ({
+        source: edge.source,
+        target: edge.target === SUBMIT_NODE_ID ? null : edge.target,
+        condition: edge.data!.condition,
+        orderIndex: edge.data?.orderIndex ?? 0,
+      })),
     viewport,
   };
 }

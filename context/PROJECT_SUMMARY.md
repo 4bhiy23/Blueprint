@@ -13,7 +13,7 @@ The intended MVP journey is:
 - **Form**: the owner-managed resource. The original PRD calls this a “blueprint”; the implementation uses `forms`.
 - **Question**: a persisted form field: `text`, `number`, `email`, `select`, `radio`, or `checkbox`.
 - **Option**: a label belonging to a select, radio, or checkbox question.
-- **Builder graph**: persisted question nodes and question-to-question edges. The current service validates it as one connected, acyclic linear path, and the builder UI loads and saves it via `/forms/:id/builder`.
+- **Builder flow**: persisted ordered question nodes with explicit branch rules layered on top. Rules can stack with `all`/`any` matching across option, checkbox, and rating answers. The first match wins; otherwise the responder continues in question order.
 - **Public ID**: the shareable, non-UUID identifier beginning with `frm_`.
 - **Response / answer**: database models for respondent submissions. The public submission API and the responder page (`/f/:publicId`) are implemented; the owner response-review API is still pending.
 
@@ -30,4 +30,4 @@ The intended MVP journey is:
 
 ## Scope boundaries
 
-The original MVP excludes conditional logic, collaboration, uploads, themes, and analytics. The code currently contains a visual analytics page, but it is mock UI rather than product functionality.
+The original MVP excluded conditional logic, collaboration, uploads, themes, and analytics. Conditional routing is now implemented; the visual analytics page remains mock UI rather than product functionality.

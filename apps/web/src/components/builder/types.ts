@@ -3,6 +3,7 @@ import {
   QUESTION_TYPES,
   QUESTION_OPTION_TYPES,
   type BuilderInput,
+  type RouteConditionGroup,
   type QuestionOptionType,
   type QuestionType,
 } from "@repo/validators";
@@ -48,7 +49,13 @@ export type QuestionFlowNode = Node<QuestionNodeData, "question">;
 export type StartFlowNode = Node<FixedNodeData, "start">;
 export type SubmitFlowNode = Node<FixedNodeData, "submit">;
 export type BuilderNode = QuestionFlowNode | StartFlowNode | SubmitFlowNode;
-export type BuilderEdge = Edge;
+export interface RouteEdgeData extends Record<string, unknown> {
+  condition: RouteConditionGroup | null;
+  kind: "sequence" | "branch" | "fallback";
+  orderIndex: number;
+  label: string;
+}
+export type BuilderEdge = Edge<RouteEdgeData>;
 
 // ─── Type metadata ──────────────────────────────────────────────────────────
 export interface QuestionTypeMeta {
@@ -132,27 +139,6 @@ export const CANVAS_DROP_ZONE_ID = "canvas-drop-zone";
 
 export const START_NODE_ID = "__start__";
 export const SUBMIT_NODE_ID = "__submit__";
-
-export const INITIAL_NODES: BuilderNode[] = [
-  {
-    id: START_NODE_ID,
-    type: "start",
-    position: { x: 320, y: 80 },
-    data: { label: "Start" },
-    deletable: false,
-    draggable: true,
-  } as StartFlowNode,
-  {
-    id: SUBMIT_NODE_ID,
-    type: "submit",
-    position: { x: 320, y: 520 },
-    data: { label: "Submit" },
-    deletable: false,
-    draggable: true,
-  } as SubmitFlowNode,
-];
-
-export const INITIAL_EDGES: BuilderEdge[] = [];
 
 // ─── ID generator ───────────────────────────────────────────────────────────
 export function generateId(): string {

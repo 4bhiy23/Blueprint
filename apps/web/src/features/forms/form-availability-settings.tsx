@@ -97,31 +97,31 @@ export function FormAvailabilitySettings({ formId }: { formId: string }) {
   };
 
   return (
-    <section aria-labelledby="form-settings-heading" className="space-y-5">
+    <section aria-labelledby="form-settings-heading" className="space-y-3">
       <div>
         <p className="font-mono text-[10px] font-bold tracking-[0.16em] text-[hsl(var(--primary))]">FORM CONTROLS</p>
-        <h2 id="form-settings-heading" className="mt-1 text-xl font-black tracking-tight">Availability settings</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Choose when this form accepts responses and who can submit again.</p>
+        <h2 id="form-settings-heading" className="mt-0.5 text-lg font-black tracking-tight">Availability settings</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">Choose when this form accepts responses and who can submit again.</p>
       </div>
 
-      <Card className="space-y-6 border-border bg-card p-5 shadow-lg">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary/15 p-4">
+      <Card className="space-y-4 border-border bg-card p-4 shadow-lg">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary/15 p-3">
             <div><Label htmlFor="start-date-toggle" className="text-foreground">Schedule a start time</Label><p className="mt-1 text-xs text-muted-foreground">Keep the form unavailable until a specific date and time.</p></div>
             <Switch id="start-date-toggle" checked={hasStartDate} onCheckedChange={setHasStartDate} />
           </div>
-          {hasStartDate && <div className="space-y-2 rounded-xl border border-[hsl(var(--primary))/0.3] bg-[hsl(var(--primary))/0.06] p-4"><Label htmlFor="opens-at">Start date and time</Label><Input id="opens-at" type="datetime-local" value={opensAt} onChange={(event) => setOpensAt(event.target.value)} className="bg-secondary/30" /></div>}
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary/15 p-4">
+          {hasStartDate && <div className="space-y-2 rounded-xl border border-[hsl(var(--primary))/0.3] bg-[hsl(var(--primary))/0.06] p-3"><Label htmlFor="opens-at">Start date and time</Label><Input id="opens-at" type="datetime-local" value={opensAt} onChange={(event) => setOpensAt(event.target.value)} className="h-8 bg-secondary/30" /></div>}
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary/15 p-3">
             <div><Label htmlFor="end-date-toggle" className="text-foreground">Schedule an end time</Label><p className="mt-1 text-xs text-muted-foreground">Stop accepting responses at a specific date and time.</p></div>
             <Switch id="end-date-toggle" checked={hasEndDate} onCheckedChange={setHasEndDate} />
           </div>
-          {hasEndDate && <div className="space-y-2 rounded-xl border border-[hsl(var(--primary))/0.3] bg-[hsl(var(--primary))/0.06] p-4"><Label htmlFor="expires-at">End date and time</Label><Input id="expires-at" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} className="bg-secondary/30" /></div>}
+          {hasEndDate && <div className="space-y-2 rounded-xl border border-[hsl(var(--primary))/0.3] bg-[hsl(var(--primary))/0.06] p-3"><Label htmlFor="expires-at">End date and time</Label><Input id="expires-at" type="datetime-local" value={expiresAt} onChange={(event) => setExpiresAt(event.target.value)} className="h-8 bg-secondary/30" /></div>}
         </div>
-        <div className="flex gap-3 rounded-xl border border-border bg-secondary/20 p-4"><CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--primary))]" /><p className="text-xs leading-5 text-muted-foreground">The API checks these times on every view and submission, so a form closes reliably without a scheduled job.</p></div>
-        <div className="space-y-2"><Label htmlFor="response-limit">Maximum responses</Label><Input id="response-limit" type="number" min="1" step="1" inputMode="numeric" value={responseLimit} onChange={(event) => setResponseLimit(event.target.value)} placeholder="Unlimited" className="max-w-xs bg-secondary/30" /><p className="text-xs text-muted-foreground">The form closes when this number of responses is reached.</p></div>
-        <div className="flex items-start justify-between gap-6 border-t border-border pt-5"><div className="flex gap-3"><Users className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--primary))]" /><div><Label htmlFor="multiple-responses" className="text-foreground">Allow multiple responses per responder</Label><p className="mt-1 text-xs leading-5 text-muted-foreground">When off, Blueprint blocks another response from the same hashed IP address.</p></div></div><Switch id="multiple-responses" checked={acceptMultipleResponses} onCheckedChange={setAcceptMultipleResponses} /></div>
+        <div className="flex gap-3 rounded-xl border border-border bg-secondary/20 p-3"><CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--primary))]" /><p className="text-xs leading-4 text-muted-foreground">The API checks these times on every view and submission, so a form closes reliably without a scheduled job.</p></div>
+        <div className="space-y-1.5"><Label htmlFor="response-limit">Maximum responses</Label><Input id="response-limit" type="number" min="1" step="1" inputMode="numeric" value={responseLimit} onChange={(event) => setResponseLimit(event.target.value)} placeholder="Unlimited" className="h-8 max-w-xs bg-secondary/30" /><p className="text-xs text-muted-foreground">The form closes when this number of responses is reached.</p></div>
+        <div className="flex items-start justify-between gap-6 border-t border-border pt-3"><div className="flex gap-3"><Users className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--primary))]" /><div><Label htmlFor="multiple-responses" className="text-foreground">Allow multiple responses per responder</Label><p className="mt-0.5 text-xs leading-4 text-muted-foreground">When off, Blueprint blocks another response from the same hashed IP address.</p></div></div><Switch id="multiple-responses" checked={acceptMultipleResponses} onCheckedChange={setAcceptMultipleResponses} /></div>
       </Card>
-      <div className="flex items-center justify-between gap-4"><div className="flex gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-[hsl(var(--primary))]" />{hasChanges ? "Unsaved changes" : "Settings are up to date"}</div><Button onClick={saveSettings} disabled={update.isPending || !hasChanges} className="gap-2"><Save className="h-4 w-4" />{update.isPending ? "Saving…" : "Save settings"}</Button></div>
+      <div className="flex items-center justify-between gap-4"><div className="flex gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-[hsl(var(--primary))]" />{hasChanges ? "Unsaved changes" : "Settings are up to date"}</div><Button size="sm" onClick={saveSettings} disabled={update.isPending || !hasChanges} className="gap-2"><Save className="h-4 w-4" />{update.isPending ? "Saving…" : "Save settings"}</Button></div>
     </section>
   );
 }

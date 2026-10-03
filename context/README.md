@@ -19,4 +19,4 @@ The current source code and migrations are authoritative. `Blueprint_Complete_PR
 - Web: Next.js App Router, React, Tailwind, React Flow, Better Auth client.
 - API: Express, Better Auth, Drizzle, Neon/PostgreSQL, Zod validation.
 - API namespace: `/api/v2`.
-- Primary aggregate: a user-owned form with questions, options, and a linear builder graph.
+- Primary aggregate: a user-owned form with questions, options, and a conditional builder graph.

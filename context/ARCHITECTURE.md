@@ -72,9 +72,9 @@ forms 1---* responses 1---* answers
 questions 1---* answers
 ```
 
-The API currently writes builder state as a form aggregate. A save validates IDs and a single connected, acyclic path, derives `firstQuestionId` and question `orderIndex`, then transactionally updates questions, options, edges, and viewport.
+The API writes builder state as a form aggregate. The question array defines canonical order, and a save validates IDs plus forward-only branch rules before transactionally updating questions, options, conditional edges, and viewport. Rules contain ordered `all`/`any` condition groups for option, checkbox, and rating answers. The first matching rule wins; when none match, the responder continues to the next ordered question. A null target submits the form.
 
-`orderIndex` remains an internal derived field. Public responders receive an already sorted `questions` array; they do not need graph edges or an `orderIndex` field.
+Question `orderIndex` remains an internal display field. Public responders receive the questions, `firstQuestionId`, and route edges, then navigate by question ID. Submission validation independently resolves the same path and rejects answers from hidden branches.
 
 ## Frontend model
 
@@ -90,6 +90,6 @@ The API currently writes builder state as a form aggregate. A save validates IDs
 
 ## Important architecture decision
 
-`Blueprint_Complete_PRD.pdf` specifies a vertical builder where only `order_index` is stored and positions are generated client-side. The current implementation instead persists a graph (`question_edges`), question positions, a viewport, and `firstQuestionId`.
+`Blueprint_Complete_PRD.pdf` specifies a vertical builder where only `order_index` is stored and positions are generated client-side. The current implementation persists ordered questions, explicit conditional jumps in `question_edges`, question positions, a viewport, and `firstQuestionId`.
 
-Treat the graph implementation as the active design unless the team explicitly decides to revert it. Do not accidentally mix the old per-question/per-option API model back into the v2 aggregate builder API.
+Treat ordered questions plus explicit branch rules as the active execution model. The canvas is a visualization and its coordinates do not determine respondent routing.

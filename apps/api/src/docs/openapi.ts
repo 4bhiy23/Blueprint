@@ -264,7 +264,7 @@
  *       additionalProperties: false
  *     BuilderEdge:
  *       type: object
- *       required: [source, target]
+ *       required: [source, target, condition, orderIndex]
  *       properties:
  *         source:
  *           type: string
@@ -272,6 +272,14 @@
  *         target:
  *           type: string
  *           format: uuid
+ *           nullable: true
+ *         condition:
+ *           type: object
+ *           nullable: true
+ *           description: An all/any condition group for a branch rule. Null stores an explicit Otherwise override; without one, the form continues in question order.
+ *         orderIndex:
+ *           type: integer
+ *           minimum: 0
  *       additionalProperties: false
  *     Builder:
  *       type: object

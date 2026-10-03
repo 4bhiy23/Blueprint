@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-16T13:47:36Z",
+  "title": "Design System: Blueprint",
+  "extensions": {
+    "colorMeta": {
+      "blueprint-blue": {
+        "role": "primary",
+        "displayName": "Blueprint Blue",
+        "canonical": "hsl(224 76% 48%)",
+        "tonalRamp": ["hsl(224 76% 15%)", "hsl(224 76% 25%)", "hsl(224 76% 35%)", "hsl(224 76% 45%)", "hsl(224 76% 55%)", "hsl(224 76% 68%)", "hsl(224 76% 82%)", "hsl(224 76% 95%)"]
+      },
+      "blueprint-blue-bright": {
+        "role": "primary",
+        "displayName": "Bright Blueprint Blue",
+        "canonical": "hsl(217 91% 60%)",
+        "tonalRamp": ["hsl(217 91% 15%)", "hsl(217 91% 25%)", "hsl(217 91% 35%)", "hsl(217 91% 45%)", "hsl(217 91% 55%)", "hsl(217 91% 68%)", "hsl(217 91% 82%)", "hsl(217 91% 95%)"]
+      },
+      "blueprint-wash": {
+        "role": "primary",
+        "displayName": "Blueprint Wash",
+        "canonical": "hsl(214 100% 97%)",
+        "tonalRamp": ["hsl(214 45% 15%)", "hsl(214 45% 25%)", "hsl(214 45% 35%)", "hsl(214 45% 45%)", "hsl(214 55% 55%)", "hsl(214 65% 68%)", "hsl(214 80% 82%)", "hsl(214 100% 95%)"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "hsl(40 33% 97%)",
+        "tonalRamp": ["hsl(40 18% 15%)", "hsl(40 18% 25%)", "hsl(40 20% 35%)", "hsl(40 22% 45%)", "hsl(40 24% 55%)", "hsl(40 27% 68%)", "hsl(40 30% 82%)", "hsl(40 33% 95%)"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Clean Sheet",
+        "canonical": "hsl(0 0% 100%)",
+        "tonalRamp": ["hsl(0 0% 15%)", "hsl(0 0% 25%)", "hsl(0 0% 35%)", "hsl(0 0% 45%)", "hsl(0 0% 55%)", "hsl(0 0% 68%)", "hsl(0 0% 82%)", "hsl(0 0% 95%)"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Deep Ink",
+        "canonical": "hsl(222 47% 11%)",
+        "tonalRamp": ["hsl(222 47% 15%)", "hsl(222 47% 25%)", "hsl(222 47% 35%)", "hsl(222 47% 45%)", "hsl(222 47% 55%)", "hsl(222 47% 68%)", "hsl(222 47% 82%)", "hsl(222 47% 95%)"]
+      },
+      "muted-surface": {
+        "role": "neutral",
+        "displayName": "Quiet Wash",
+        "canonical": "hsl(210 40% 98%)",
+        "tonalRamp": ["hsl(210 20% 15%)", "hsl(210 20% 25%)", "hsl(210 22% 35%)", "hsl(210 24% 45%)", "hsl(210 28% 55%)", "hsl(210 32% 68%)", "hsl(210 36% 82%)", "hsl(210 40% 95%)"]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Drafting Note",
+        "canonical": "hsl(215 16% 47%)",
+        "tonalRamp": ["hsl(215 16% 15%)", "hsl(215 16% 25%)", "hsl(215 16% 35%)", "hsl(215 16% 45%)", "hsl(215 16% 55%)", "hsl(215 16% 68%)", "hsl(215 16% 82%)", "hsl(215 16% 95%)"]
+      },
+      "grid-line": {
+        "role": "neutral",
+        "displayName": "Grid Line",
+        "canonical": "hsl(215 28% 90%)",
+        "tonalRamp": ["hsl(215 20% 15%)", "hsl(215 20% 25%)", "hsl(215 20% 35%)", "hsl(215 22% 45%)", "hsl(215 24% 55%)", "hsl(215 24% 68%)", "hsl(215 26% 82%)", "hsl(215 28% 95%)"]
+      },
+      "destructive": {
+        "role": "tertiary",
+        "displayName": "Correction Red",
+        "canonical": "hsl(0 84% 60%)",
+        "tonalRamp": ["hsl(0 84% 15%)", "hsl(0 84% 25%)", "hsl(0 84% 35%)", "hsl(0 84% 45%)", "hsl(0 84% 55%)", "hsl(0 84% 68%)", "hsl(0 84% 82%)", "hsl(0 84% 95%)"]
+      }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Compact Title", "purpose": "Panel, rule, node, and navigation titles." },
+      "body": { "displayName": "Builder Body", "purpose": "Instructions, helper copy, descriptions, and editable values." },
+      "label": { "displayName": "Operational Label", "purpose": "Short uppercase metadata, condition numbers, and section labels." }
+    },
+    "shadows": [
+      { "name": "control", "value": "0 1px 2px rgb(0 0 0 / 0.05)", "purpose": "A subtle lift for active tabs, compact fields, and rule cards." },
+      { "name": "selected-node", "value": "0 0 0 1px hsl(224 76% 48%), 0 0 20px rgb(99 102 241 / 0.15)", "purpose": "Marks the canvas question currently open in the properties panel." },
+      { "name": "drag-preview", "value": "0 25px 50px -12px rgb(0 0 0 / 0.60)", "purpose": "Separates the temporary dragged question from the canvas." }
+    ],
+    "motion": [
+      { "name": "state-change", "value": "150ms ease", "purpose": "Hover, focus, pressed, and compact control state changes." },
+      { "name": "panel-feedback", "value": "200ms ease", "purpose": "Node selection, canvas drop state, and save-status feedback." }
+    ],
+    "breakpoints": [
+      { "name": "mobile-builder", "value": "1024px", "purpose": "Below this width, replace the canvas workspace with the ordered mobile question editor." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Compact principal action for Publish, Done, and creation.",
+      "html": "<button class=\"ds-button-primary\">Publish</button>",
+      "css": ".ds-button-primary { height: 32px; padding: 0 14px; border: 1px solid hsl(var(--foreground)); border-radius: 8px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font: 600 12px/1 var(--font-geist-sans, Arial, sans-serif); box-shadow: 0 1px 2px rgb(0 0 0 / .12); transition: background 150ms ease, transform 150ms ease; } .ds-button-primary:hover { background: hsl(var(--blueprint-blue-light)); } .ds-button-primary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; } .ds-button-primary:active { transform: translate(1px, 1px); }"
+    },
+    {
+      "name": "Compact Field",
+      "kind": "input",
+      "refersTo": "field-compact",
+      "description": "Dense field used by conditions, destinations, and question settings.",
+      "html": "<input class=\"ds-field-compact\" value=\"Option A\" aria-label=\"Option\">",
+      "css": ".ds-field-compact { width: 100%; height: 36px; padding: 0 8px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); color: hsl(var(--foreground)); font: 400 12px/1 var(--font-geist-sans, Arial, sans-serif); box-shadow: 0 1px 2px rgb(0 0 0 / .05); } .ds-field-compact:hover { border-color: hsl(var(--foreground) / .75); } .ds-field-compact:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }"
+    },
+    {
+      "name": "Question and Logic Tabs",
+      "kind": "nav",
+      "description": "Peer modes for content editing and respondent-path editing.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"Question editing sections\"><button class=\"ds-tab ds-tab-active\" role=\"tab\" aria-selected=\"true\">Question</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Logic <span class=\"ds-count\">2</span></button></div>",
+      "css": ".ds-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 4px; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--muted) / .25); } .ds-tab { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; border: 0; border-radius: 6px; background: transparent; color: hsl(var(--muted-foreground)); font: 500 12px/1 var(--font-geist-sans, Arial, sans-serif); } .ds-tab:hover { color: hsl(var(--foreground)); } .ds-tab:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; } .ds-tab-active { background: hsl(var(--background)); color: hsl(var(--foreground)); box-shadow: 0 1px 2px rgb(0 0 0 / .08); } .ds-count { min-width: 16px; padding: 1px 4px; border-radius: 9999px; background: hsl(var(--primary) / .15); color: hsl(var(--primary)); font-size: 10px; }"
+    },
+    {
+      "name": "Question Node",
+      "kind": "card",
+      "refersTo": "question-node",
+      "description": "Canvas summary for one canonical ordered question.",
+      "html": "<article class=\"ds-question-node\"><header class=\"ds-node-header\"><span class=\"ds-node-icon\">?</span><span>Multiple Choice</span></header><div class=\"ds-node-body\"><strong>Which plan fits you?</strong><div class=\"ds-answer-preview\">○ Starter</div><div class=\"ds-answer-preview\">○ Pro</div></div></article>",
+      "css": ".ds-question-node { width: 256px; overflow: hidden; border: 1px solid hsl(var(--primary)); border-radius: 12px; background: hsl(var(--card)); color: hsl(var(--foreground)); box-shadow: 0 0 0 1px hsl(var(--primary)), 0 0 20px rgb(99 102 241 / .15); font-family: var(--font-geist-sans, Arial, sans-serif); } .ds-node-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; border-bottom: 1px solid hsl(var(--border) / .6); color: hsl(var(--muted-foreground)); font-size: 12px; } .ds-node-icon { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 4px; background: hsl(var(--primary) / .15); color: hsl(var(--primary)); font-weight: 700; } .ds-node-body { display: grid; gap: 6px; padding: 12px 14px; font-size: 14px; } .ds-answer-preview { color: hsl(var(--muted-foreground)); font-size: 12px; } .ds-question-node:hover { box-shadow: 0 0 0 1px hsl(var(--primary)), 0 4px 12px rgb(0 0 0 / .10); } .ds-question-node:focus-within { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }"
+    },
+    {
+      "name": "Branch Rule Card",
+      "kind": "custom",
+      "refersTo": "rule-card",
+      "description": "One priority-ordered branch with match mode, conditions, and destination.",
+      "html": "<section class=\"ds-rule-card\"><header class=\"ds-rule-header\"><span class=\"ds-rule-number\">1</span><span><strong>Rule 1</strong><small>Priority 1</small></span></header><div class=\"ds-rule-body\"><div class=\"ds-rule-row\"><strong>When</strong><span class=\"ds-segment\">Match all</span></div><div class=\"ds-condition\"><small>CONDITION 1</small><span>Plan is Pro</span></div><div class=\"ds-destination\">→ <span>Then go to <strong>Payment</strong></span></div></div></section>",
+      "css": ".ds-rule-card { overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--background)); color: hsl(var(--foreground)); box-shadow: 0 1px 2px rgb(0 0 0 / .05); font-family: var(--font-geist-sans, Arial, sans-serif); } .ds-rule-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--muted) / .25); font-size: 12px; } .ds-rule-header span:last-child { display: grid; gap: 2px; } .ds-rule-header small { color: hsl(var(--muted-foreground)); font-size: 10px; } .ds-rule-number { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; border-radius: 9999px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-size: 11px; font-weight: 600; } .ds-rule-body { display: grid; gap: 12px; padding: 12px; font-size: 12px; } .ds-rule-row { display: flex; align-items: center; justify-content: space-between; } .ds-segment { padding: 5px 8px; border: 1px solid hsl(var(--border)); border-radius: 4px; background: hsl(var(--background)); box-shadow: 0 1px 2px rgb(0 0 0 / .05); } .ds-condition { display: grid; gap: 8px; padding: 10px; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--muted) / .20); } .ds-condition small { color: hsl(var(--muted-foreground)); font-weight: 600; letter-spacing: .05em; } .ds-destination { display: flex; gap: 8px; padding: 10px; border-radius: 8px; background: hsl(var(--primary) / .08); color: hsl(var(--primary)); } .ds-rule-card:hover { border-color: hsl(var(--primary) / .5); } .ds-rule-card:focus-within { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }"
+    },
+    {
+      "name": "Otherwise Fallback",
+      "kind": "custom",
+      "description": "Computed normal path shown after all explicit rules.",
+      "html": "<div class=\"ds-fallback\"><span class=\"ds-fallback-arrow\">↓</span><span><strong>Otherwise, continue normally</strong><small>Go to “Payment” when no rule matches.</small></span></div>",
+      "css": ".ds-fallback { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--muted) / .20); color: hsl(var(--foreground)); font-family: var(--font-geist-sans, Arial, sans-serif); font-size: 12px; } .ds-fallback span:last-child { display: grid; gap: 4px; } .ds-fallback small { color: hsl(var(--muted-foreground)); font-size: 11px; line-height: 1.5; } .ds-fallback-arrow { color: hsl(var(--muted-foreground)); font-size: 16px; } .ds-fallback:hover { background: hsl(var(--muted) / .35); } .ds-fallback:focus-within { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Working Blueprint",
+    "overview": "Blueprint's authenticated builder is an operational workspace: compact, ordered, and explicit. It uses paper-like surfaces, ink-colored structure, and blueprint blue for selection and action. The interface stays quiet enough for long authoring sessions while keeping the current question, save state, and routing decisions easy to scan.\n\nThe builder presents form logic in the language of questions and respondent paths. Question editing and Logic are separate modes in the properties panel. Logic is expressed as ordered rule cards rather than graph editing: priority is visible, conditions are stacked, the all/any relationship is explicit, every rule names its destination, and a computed otherwise card explains the normal path.",
+    "keyCharacteristics": [
+      "Compact three-panel desktop workspace with a fixed top action bar.",
+      "Paper, ink, and blueprint-blue palette with low-contrast panel layering.",
+      "Small, direct labels and restrained iconography for dense authoring controls.",
+      "Canonical question order separated from movable canvas layout.",
+      "Branching shown as a readable priority list with an explicit fallback.",
+      "Dedicated ordered mobile question list below the desktop breakpoint."
+    ],
+    "rules": [
+      { "name": "The Blue Means Action Rule", "body": "Use blueprint blue for action, focus, selection, and active routing state; do not turn whole panels blue.", "section": "colors" },
+      { "name": "The Ink Carries Structure Rule", "body": "Text, borders, and connectors establish hierarchy before shadows or decoration do.", "section": "colors" },
+      { "name": "The Small Is Still Legible Rule", "body": "Ten-pixel text is reserved for short metadata; instructions and editable values remain at twelve pixels or larger.", "section": "typography" },
+      { "name": "The Order Is Behavior Rule", "body": "The question array is the canonical respondent order. Canvas coordinates only arrange the diagram and must never determine traversal, fallback, persistence order, or destination eligibility.", "section": "layout" },
+      { "name": "The Forward Path Rule", "body": "Rule destinations may only be later questions or form submission. Conditions may reference the current question or an earlier compatible choice or rating question.", "section": "layout" },
+      { "name": "The Flat Workspace Rule", "body": "Keep resting authoring surfaces nearly flat; use depth to communicate interaction state, not decoration.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Question and Logic as separate, equally discoverable editing modes.",
+      "Do show rule priority as both order and a visible number, and renumber after every move or deletion.",
+      "Do say that rules run top to bottom and the first matching rule wins.",
+      "Do keep all/any selection adjacent to the condition list it governs.",
+      "Do show an explicit destination in every rule and a computed otherwise destination after the list.",
+      "Do derive sequential canvas edges and fallback behavior from canonical question array order.",
+      "Do preserve keyboard labels, focus rings, and text cues so color is never the only state signal."
+    ],
+    "donts": [
+      "Don't infer respondent order from x/y canvas coordinates.",
+      "Don't allow a branch to target the same question, an earlier question, or an unknown node.",
+      "Don't hide priority in storage or connector geometry; it must be readable and directly reorderable.",
+      "Don't mix question-content fields into the Logic mode or branching controls into the Question mode.",
+      "Don't present the fallback as another editable rule; it is the computed normal path.",
+      "Don't bring the public site's exaggerated doodle borders and offset shadows into nested logic controls."
+    ]
+  }
+}

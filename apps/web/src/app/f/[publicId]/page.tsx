@@ -15,6 +15,7 @@ import {
 } from "@/features/forms/queries";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveNextQuestion } from "@repo/validators";
 
 interface UserAnswer {
   value: string;
@@ -30,7 +31,8 @@ export default function PublicFormResponderPage() {
   const submitResponse = usePublicResponseMutation();
 
   // Flow State
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
+  const [questionHistory, setQuestionHistory] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<string, UserAnswer>>({});
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -40,6 +42,12 @@ export default function PublicFormResponderPage() {
   useEffect(() => {
     if (formQuery.data) startTimeRef.current = Date.now();
   }, [formQuery.data]);
+
+  useEffect(() => {
+    if (!currentQuestionId && formQuery.data?.firstQuestionId) {
+      setCurrentQuestionId(formQuery.data.firstQuestionId);
+    }
+  }, [currentQuestionId, formQuery.data?.firstQuestionId]);
 
   useEffect(() => {
     if (formQuery.error) {
@@ -133,12 +141,37 @@ export default function PublicFormResponderPage() {
   }
 
   const { form, questions } = formQuery.data as Required<typeof formQuery.data>;
-  const currentQuestion = questions[currentIndex];
-  const totalQuestions = questions.length;
-  const isFirst = currentIndex === 0;
-  const isLast = currentIndex === totalQuestions - 1;
+  const routeEdges = formQuery.data.edges ?? [];
+  const questionOrder = questions.map((question) => question.id);
+  const currentQuestion = questions.find((question) => question.id === currentQuestionId) ?? questions[0];
+  const isFirst = questionHistory.length === 0;
 
   const currentAnswer = answers[currentQuestion.id] || { value: "", optionIds: [] };
+  const activeQuestionIds = new Set([...questionHistory, currentQuestion.id]);
+  const activeAnswers = Object.fromEntries(
+    Object.entries(answers).filter(([questionId]) => activeQuestionIds.has(questionId)),
+  );
+  const projectedBranch = [currentQuestion.id];
+  const projectedQuestionIds = new Set(projectedBranch);
+  let projectedQuestionId = resolveNextQuestion(
+    currentQuestion.id,
+    activeAnswers,
+    questionOrder,
+    routeEdges,
+  );
+  while (projectedQuestionId && !projectedQuestionIds.has(projectedQuestionId)) {
+    projectedBranch.push(projectedQuestionId);
+    projectedQuestionIds.add(projectedQuestionId);
+    projectedQuestionId = resolveNextQuestion(
+      projectedQuestionId,
+      activeAnswers,
+      questionOrder,
+      routeEdges,
+    );
+  }
+  const branchQuestionCount = questionHistory.length + projectedBranch.length;
+  const currentQuestionNumber = questionHistory.length + 1;
+  const progress = (currentQuestionNumber / branchQuestionCount) * 100;
 
   const updateAnswer = (value: string, optionIds: string[]) => {
     setValidationError(null);
@@ -198,22 +231,28 @@ export default function PublicFormResponderPage() {
 
   const handleNext = () => {
     if (!validateCurrentQuestion()) return;
-
-    if (isLast) {
-      void handleSubmit();
-    } else {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    const prunedAnswers = Object.fromEntries(
+      Object.entries(answers).filter(([questionId]) =>
+        questionId === currentQuestion.id || questionHistory.includes(questionId),
+      ),
+    );
+    const nextQuestionId = resolveNextQuestion(currentQuestion.id, prunedAnswers, questionOrder, routeEdges);
+    setAnswers(prunedAnswers);
+    if (!nextQuestionId) return void handleSubmit(prunedAnswers);
+    setQuestionHistory((previous) => [...previous, currentQuestion.id]);
+    setCurrentQuestionId(nextQuestionId);
+    setValidationError(null);
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setValidationError(null);
-      setCurrentIndex((prev) => prev - 1);
-    }
+    const previousQuestionId = questionHistory.at(-1);
+    if (!previousQuestionId) return;
+    setValidationError(null);
+    setQuestionHistory((previous) => previous.slice(0, -1));
+    setCurrentQuestionId(previousQuestionId);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (submissionAnswers = answers) => {
     const completionMs = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
 
     const answerPayloads: {
@@ -222,7 +261,7 @@ export default function PublicFormResponderPage() {
       value?: string;
     }[] = [];
 
-    for (const [questionId, ans] of Object.entries(answers)) {
+    for (const [questionId, ans] of Object.entries(submissionAnswers)) {
       const question = questions.find((q) => q.id === questionId);
       const isOptionBased =
         !!question &&
@@ -324,14 +363,14 @@ export default function PublicFormResponderPage() {
           <div className="flex justify-between items-center text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 font-mono">
             <span className="truncate max-w-50 font-doodle text-sm font-black text-[hsl(var(--foreground))]">{form.title}</span>
             <span className="bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))] border-2 border-[hsl(var(--foreground))] shadow-[1.5px_1.5px_0px_0px_hsl(var(--foreground))] px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold">
-              QUESTION {currentIndex + 1} OF {totalQuestions}
+              QUESTION {currentQuestionNumber} OF {branchQuestionCount}
             </span>
           </div>
           {/* Progress Bar */}
           <div className="w-full bg-slate-100 h-2.5 rounded-md border-2 border-[hsl(var(--foreground))] overflow-hidden p-0.5">
             <div
               className="bg-[hsl(var(--primary))] h-full rounded-sm transition-all duration-300 ease-out"
-              style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -571,7 +610,7 @@ export default function PublicFormResponderPage() {
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Submitting
               </>
-            ) : isLast ? (
+            ) : resolveNextQuestion(currentQuestion.id, answers, questionOrder, routeEdges) === null ? (
               "Submit"
             ) : (
               <>

@@ -151,16 +151,16 @@ export default function FormOverviewPage() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid gap-4 lg:grid-cols-3">
       {/* ─── Left Section: Form Information & Settings ────────────────────── */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-4 lg:col-span-2">
         {/* Form Information */}
-        <Card className="p-5 bg-card border border-border">
-          <h3 className="font-semibold text-foreground text-sm mb-3">Form Information</h3>
-          <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+        <Card className="border border-border bg-card p-4">
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Form Information</h3>
+          <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
             {form.description || "No description provided."}
           </p>
-          <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
               <div>
@@ -187,14 +187,14 @@ export default function FormOverviewPage() {
       </div>
 
       {/* ─── Right Section: Quick Stats, Responses, Actions ────────────────── */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Quick Actions */}
-        <Card className="p-5 bg-card border border-border space-y-4">
+        <Card className="space-y-3 border border-border bg-card p-4">
           <h3 className="font-semibold text-foreground text-sm">Quick Actions</h3>
           <div className="grid gap-2">
             <Button
               size="sm"
-              className="flex w-full text-xs font-bold h-11 gap-2 bg-[hsl(var(--mocha-mauve))] text-[hsl(var(--mocha-crust))] hover:bg-[hsl(var(--mocha-mauve))/0.9] shadow-md transition-all"
+              className="flex h-9 w-full gap-2 bg-[hsl(var(--mocha-mauve))] text-xs font-bold text-[hsl(var(--mocha-crust))] shadow-md transition-all hover:bg-[hsl(var(--mocha-mauve))/0.9]"
               onClick={() => router.push(`/forms/${form.id}/builder`)}
             >
               <span className="sm:hidden">Edit form</span><span className="hidden sm:inline">Open Builder</span> <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -214,7 +214,7 @@ export default function FormOverviewPage() {
                         ? publicFormUrl
                         : "Form must be published to share"
                     }
-                    className="h-9 text-[11px] font-mono bg-secondary/40 border-border text-foreground pr-2 font-medium select-all"
+                  className="h-8 border-border bg-secondary/40 pr-2 font-mono text-[11px] font-medium text-foreground select-all"
                   />
                 </div>
                 
@@ -224,7 +224,7 @@ export default function FormOverviewPage() {
                   onClick={handleCopyLink}
                   disabled={form.status !== "published"}
                   className={cn(
-                    "h-9 px-3 text-xs font-semibold gap-1.5 transition-all border-border shrink-0 cursor-pointer",
+                    "h-8 shrink-0 cursor-pointer gap-1.5 border-border px-3 text-xs font-semibold transition-all",
                     copied
                       ? "bg-[hsl(var(--mocha-green))/0.2] border-[hsl(var(--mocha-green))/0.4] text-[hsl(var(--mocha-green))]"
                       : "bg-secondary/40 hover:bg-secondary/80 text-foreground"
@@ -249,7 +249,7 @@ export default function FormOverviewPage() {
                   size="icon"
                   onClick={() => setIsQrDialogOpen(true)}
                   disabled={form.status !== "published"}
-                  className="h-9 w-9 border-border bg-secondary/40 hover:bg-secondary/80 text-foreground shrink-0"
+                  className="h-8 w-8 shrink-0 border-border bg-secondary/40 text-foreground hover:bg-secondary/80"
                   aria-label="Show QR code"
                   title="Show QR code"
                 >
@@ -261,7 +261,7 @@ export default function FormOverviewPage() {
                     variant="outline"
                     size="icon"
                     onClick={() => window.open(`/f/${form.publicId}`, "_blank")}
-                    className="h-9 w-9 border-border bg-secondary/40 hover:bg-secondary/80 text-foreground shrink-0"
+                    className="h-8 w-8 shrink-0 border-border bg-secondary/40 text-foreground hover:bg-secondary/80"
                     title="Open public form in new tab"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -312,7 +312,7 @@ export default function FormOverviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs font-semibold h-9 gap-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                className="h-8 w-full gap-2 border-primary bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                 onClick={() => void updateStatus("published")}
               >
                 <Globe className="h-3.5 w-3.5" /> Publish Form
@@ -322,7 +322,7 @@ export default function FormOverviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs font-semibold h-9 gap-2 border-border"
+                className="h-8 w-full gap-2 border-border text-xs font-semibold"
                 onClick={() => void updateStatus("closed")}
               >
                 Close Form
@@ -332,7 +332,7 @@ export default function FormOverviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs font-semibold h-9 gap-2 border-border"
+                className="h-8 w-full gap-2 border-border text-xs font-semibold"
                 onClick={() => void updateStatus("draft")}
               >
                 Reopen as Draft
@@ -342,18 +342,18 @@ export default function FormOverviewPage() {
         </Card>
 
         {/* Quick Statistics */}
-        <Card className="p-5 bg-card border border-border space-y-4">
+        <Card className="space-y-3 border border-border bg-card p-4">
           <h3 className="font-semibold text-foreground text-sm">Form Stats</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="border border-border/50 bg-muted/10 rounded-lg p-3 text-center">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border/50 bg-muted/10 p-2 text-center">
               <span className="text-[10px] text-muted-foreground uppercase block font-medium">Questions</span>
               <span className="text-lg font-bold text-foreground mt-0.5 block">{questions.length}</span>
             </div>
-            <div className="border border-border/50 bg-muted/10 rounded-lg p-3 text-center">
+            <div className="rounded-lg border border-border/50 bg-muted/10 p-2 text-center">
               <span className="text-[10px] text-muted-foreground uppercase block font-medium">Responses</span>
               <span className="text-lg font-bold text-foreground mt-0.5 block">{form.responseCount ?? 0}</span>
             </div>
-            <div className="border border-border/50 bg-muted/10 rounded-lg p-3 text-center col-span-2">
+            <div className="col-span-2 rounded-lg border border-border/50 bg-muted/10 p-2 text-center">
               <span className="text-[10px] text-muted-foreground uppercase block font-medium">Completion Rate</span>
               <span className="text-lg font-bold text-foreground mt-0.5 block">—</span>
             </div>
@@ -361,7 +361,7 @@ export default function FormOverviewPage() {
         </Card>
 
         {/* Recent Responses */}
-        <Card className="p-5 bg-card border border-border space-y-3.5">
+        <Card className="space-y-2.5 border border-border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-semibold text-foreground text-sm">Responses</h3>
             <Button
@@ -380,7 +380,7 @@ export default function FormOverviewPage() {
           </p>
         </Card>
 
-        <Card className="p-5 bg-card border border-border space-y-3.5">
+        <Card className="space-y-2.5 border border-border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-semibold text-foreground text-sm">Analytics</h3>
             <Button

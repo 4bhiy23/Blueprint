@@ -40,8 +40,13 @@ export async function listResponsesForUser(input: {
 
   // Map answers by responseId and questionId
   const answersByResponse = new Map<string, Array<{ questionId: string; answer: string }>>();
+  const questionIdsByResponse = new Map<string, Set<string>>();
 
   for (const ans of allAnswers) {
+    const questionIds = questionIdsByResponse.get(ans.responseId) ?? new Set<string>();
+    questionIds.add(ans.questionId);
+    questionIdsByResponse.set(ans.responseId, questionIds);
+
     const list = answersByResponse.get(ans.responseId) ?? [];
     let answerText = ans.value;
     if (ans.optionId) {
@@ -67,6 +72,7 @@ export async function listResponsesForUser(input: {
       id: response.id,
       submittedAt: response.submittedAt,
       completionMs: response.completionMs,
+      questionIds: [...(questionIdsByResponse.get(response.id) ?? [])],
       answers: answersByResponse.get(response.id) ?? [],
     })),
   };
@@ -142,6 +148,7 @@ export async function getResponseForUser(input: {
   const optionsById = new Map(selectedOptions.map((option) => [option.id, option]));
   const answersByQuestionId = new Map<string, (typeof responseAnswers)[number]>();
   const optionLabelsByQuestionId = new Map<string, string[]>();
+  const reachedQuestionIds = new Set(responseAnswers.map((answer) => answer.questionId));
 
   for (const answer of responseAnswers) {
     if (answer.optionId) {
@@ -162,7 +169,7 @@ export async function getResponseForUser(input: {
       id: response.id,
       submittedAt: response.submittedAt,
       completionMs: response.completionMs,
-      answers: formQuestions.map((question) => ({
+      answers: formQuestions.filter((question) => reachedQuestionIds.has(question.id)).map((question) => ({
         questionId: question.id,
         question: question.title,
         answer:

@@ -1,5 +1,8 @@
 import { defineConfig } from "drizzle-kit";
-import "dotenv/config";
+import { config } from "dotenv";
+
+config({ path: new URL("../../apps/api/.env", import.meta.url), quiet: true });
+config({ quiet: true });
 
 export default defineConfig({
   out: "./drizzle",

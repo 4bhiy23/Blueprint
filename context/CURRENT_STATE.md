@@ -15,7 +15,7 @@
 - Create, list, read, update, delete, and duplicate owned forms.
 - Metadata updates support title, description, and status (`draft`, `published`, `closed`, `archived`).
 - Builder reads and writes complete form state through `/forms/:id/builder`.
-- Builder writes are transactionally validated, including ownership, graph connectivity, duplicate IDs, and allowed option-bearing question types.
+- Builder writes are transactionally validated, including ownership, ordered forward-only branch rules, duplicate IDs, and allowed option-bearing question types.
 - Legacy independent question and option mutation routes were removed in favor of aggregate builder writes.
 
 ### Builder UI
@@ -30,7 +30,7 @@
 
 - `GET /api/v2/public/forms/:publicId` resolves published forms only.
 - It returns responder-safe metadata plus ordered questions and option labels/IDs.
-- It does not expose owners, builder positions, graph edges, or viewport state.
+- It does not expose owners, builder positions, or viewport state. It exposes ordered questions and explicit branch rules; normal continuation follows question order.
 
 ### Public response submission API
 
@@ -49,7 +49,7 @@
 
 ### Database
 
-- Schemas and migrations exist for auth, forms, questions, options, edges, responses, and answers.
+- Schemas and migrations exist for auth, forms, questions, options, conditional edges, responses, and answers.
 - Deletion cascades remove form-owned questions, options, edges, responses, and answers as applicable.
 - `packages/db/src/seed-dummy.ts` is a dev-only script that seeds a published dummy survey for manual responder testing (run directly with `tsx`; no npm script wired up).
 

@@ -85,6 +85,11 @@ export default function ResponsesPage() {
   const totalSubmissions = responsesData.responses.length;
   const questionsList = formDetails.questions;
   const currentQuestion = questionsList[currentQuestionIndex];
+  const responsesForCurrentQuestion = currentQuestion
+    ? responsesData.responses
+        .map((response, index) => ({ response, number: totalSubmissions - index }))
+        .filter(({ response }) => response.questionIds.includes(currentQuestion.id))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -292,17 +297,17 @@ export default function ResponsesPage() {
                     Answers for Question #{currentQuestionIndex + 1}
                   </span>
                   <Badge variant="muted" className="text-[10px] font-mono">
-                    {totalSubmissions} Total Submissions
+                    {responsesForCurrentQuestion.length} of {totalSubmissions} respondents saw this question
                   </Badge>
                 </div>
 
-                {totalSubmissions === 0 ? (
+                {responsesForCurrentQuestion.length === 0 ? (
                   <div className="p-8 text-center border border-dashed border-border rounded-xl bg-secondary/10">
-                    <p className="text-xs text-muted-foreground">No answers recorded yet for this question.</p>
+                    <p className="text-xs text-muted-foreground">No respondents reached this question.</p>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
-                    {responsesData.responses.map((resp, rIdx) => {
+                    {responsesForCurrentQuestion.map(({ response: resp, number }) => {
                       const userAns = resp.answers?.find((a) => a.questionId === currentQuestion.id)?.answer;
                       return (
                         <div
@@ -312,7 +317,7 @@ export default function ResponsesPage() {
                           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex min-w-0 items-center gap-2">
                               <span className="text-[10px] font-mono font-bold text-[hsl(var(--mocha-mauve))]">
-                                RESPONDER #{totalSubmissions - rIdx}
+                                RESPONDER #{number}
                               </span>
                               <span className="min-w-0 truncate text-[10px] font-mono text-muted-foreground/60">
                                 (ID: {resp.id})

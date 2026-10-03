@@ -41,18 +41,34 @@ function usesOptions(type: QuestionType) {
   return QUESTION_OPTION_TYPES.includes(type as (typeof QUESTION_OPTION_TYPES)[number]);
 }
 
-function makeLinearBuilder(nodes: MobileQuestion[], viewport: BuilderData["viewport"]): BuilderData {
+function makeBuilder(
+  nodes: MobileQuestion[],
+  viewport: BuilderData["viewport"],
+  edges: BuilderData["edges"] = [],
+): BuilderData {
   const positionedNodes = nodes.map((node, index) => ({
     ...node,
     position: { x: 80, y: 80 + index * 170 },
   }));
+  const indexById = new Map(positionedNodes.map((node, index) => [node.id, index]));
+  const optionIds = new Set(positionedNodes.flatMap((node) => node.data.options.map((option) => option.id)));
+  const validEdges = edges.filter((edge) => {
+    const sourceIndex = indexById.get(edge.source);
+    if (sourceIndex === undefined) return false;
+    if (edge.target && (indexById.get(edge.target) ?? -1) <= sourceIndex) return false;
+    if (!edge.condition) return true;
+    return edge.condition.conditions.every((condition) => {
+      const conditionIndex = indexById.get(condition.questionId);
+      if (conditionIndex === undefined || conditionIndex > sourceIndex) return false;
+      if (condition.kind === "option") return optionIds.has(condition.optionId);
+      if (condition.kind === "checkbox") return condition.optionIds.every((id) => optionIds.has(id));
+      return true;
+    });
+  });
 
   return {
     nodes: positionedNodes,
-    edges: positionedNodes.slice(1).map((node, index) => ({
-      source: positionedNodes[index].id,
-      target: node.id,
-    })),
+    edges: validEdges,
     viewport,
   };
 }
@@ -133,9 +149,10 @@ export function MobileFormBuilder() {
   }, [isReadOnly, save]);
 
   const updateQuestion = (questionId: string, update: (question: MobileQuestion) => MobileQuestion) => {
-    updateBuilder((current) => makeLinearBuilder(
+    updateBuilder((current) => makeBuilder(
       current.nodes.map((question) => question.id === questionId ? update(question) : question),
       current.viewport,
+      current.edges,
     ));
   };
 
@@ -146,7 +163,7 @@ export function MobileFormBuilder() {
       if (index < 0 || destination < 0 || destination >= current.nodes.length) return current;
       const nodes = [...current.nodes];
       [nodes[index], nodes[destination]] = [nodes[destination], nodes[index]];
-      return makeLinearBuilder(nodes, current.viewport);
+      return makeBuilder(nodes, current.viewport, current.edges);
     });
   };
 
@@ -178,13 +195,13 @@ export function MobileFormBuilder() {
       <section className="mx-auto max-w-lg space-y-4 px-4 pt-5">
         <div className="flex items-end justify-between gap-3">
           <div><p className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">Form flow</p><h1 className="mt-1 text-xl font-black text-foreground">Questions</h1></div>
-          {!isReadOnly && <AddQuestionButton onAdd={(type) => updateBuilder((current) => makeLinearBuilder([...current.nodes, newQuestion(type)], current.viewport))} />}
+          {!isReadOnly && <AddQuestionButton onAdd={(type) => updateBuilder((current) => makeBuilder([...current.nodes, newQuestion(type)], current.viewport, current.edges))} />}
         </div>
 
         {isReadOnly && <Card className="border-primary/30 bg-primary/5 p-4 text-xs leading-5 text-muted-foreground">Close responses to edit questions. You can still preview the published form.</Card>}
 
         {builder.nodes.length === 0 ? (
-          <Card className="border-dashed p-6 text-center"><p className="text-sm font-semibold text-foreground">Start with your first question</p><p className="mt-1 text-xs text-muted-foreground">Add a question to create the form flow.</p>{!isReadOnly && <div className="mt-4"><AddQuestionButton onAdd={(type) => updateBuilder((current) => makeLinearBuilder([newQuestion(type)], current.viewport))} /></div>}</Card>
+          <Card className="border-dashed p-6 text-center"><p className="text-sm font-semibold text-foreground">Start with your first question</p><p className="mt-1 text-xs text-muted-foreground">Add a question to create the form flow.</p>{!isReadOnly && <div className="mt-4"><AddQuestionButton onAdd={(type) => updateBuilder((current) => makeBuilder([newQuestion(type)], current.viewport))} /></div>}</Card>
         ) : (
           <ol className="space-y-3">
             {builder.nodes.map((question, index) => {
@@ -197,7 +214,7 @@ export function MobileFormBuilder() {
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-foreground">{question.data.title}</span><span className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><Icon className="h-3.5 w-3.5" /> {meta.label}{question.data.required && " · Required"}</span></span>
                     <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
-                  {!isReadOnly && <div className="mt-3 flex border-t border-border pt-3"><Button variant="ghost" size="sm" className="min-h-11 flex-1" disabled={index === 0} onClick={() => moveQuestion(question.id, -1)}><ArrowUp /> Up</Button><Button variant="ghost" size="sm" className="min-h-11 flex-1" disabled={index === builder.nodes.length - 1} onClick={() => moveQuestion(question.id, 1)}><ArrowDown /> Down</Button><Button variant="ghost" size="sm" className="min-h-11 flex-1" onClick={() => updateBuilder((current) => { const at = current.nodes.findIndex((item) => item.id === question.id); const nodes = [...current.nodes]; nodes.splice(at + 1, 0, duplicateQuestion(question)); return makeLinearBuilder(nodes, current.viewport); })}><Copy /> Copy</Button><Button variant="ghost" size="sm" className="min-h-11 flex-1 text-destructive hover:text-destructive" onClick={() => { if (window.confirm("Delete this question?")) updateBuilder((current) => makeLinearBuilder(current.nodes.filter((item) => item.id !== question.id), current.viewport)); }}><Trash2 /> Delete</Button></div>}
+                  {!isReadOnly && <div className="mt-3 flex border-t border-border pt-3"><Button variant="ghost" size="sm" className="min-h-11 flex-1" disabled={index === 0} onClick={() => moveQuestion(question.id, -1)}><ArrowUp /> Up</Button><Button variant="ghost" size="sm" className="min-h-11 flex-1" disabled={index === builder.nodes.length - 1} onClick={() => moveQuestion(question.id, 1)}><ArrowDown /> Down</Button><Button variant="ghost" size="sm" className="min-h-11 flex-1" onClick={() => updateBuilder((current) => { const at = current.nodes.findIndex((item) => item.id === question.id); const nodes = [...current.nodes]; nodes.splice(at + 1, 0, duplicateQuestion(question)); return makeBuilder(nodes, current.viewport, current.edges); })}><Copy /> Copy</Button><Button variant="ghost" size="sm" className="min-h-11 flex-1 text-destructive hover:text-destructive" onClick={() => { if (window.confirm("Delete this question?")) updateBuilder((current) => makeBuilder(current.nodes.filter((item) => item.id !== question.id), current.viewport, current.edges)); }}><Trash2 /> Delete</Button></div>}
                 </Card>
               </li>;
             })}

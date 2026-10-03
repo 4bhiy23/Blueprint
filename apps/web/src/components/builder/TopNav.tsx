@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, Globe, Pencil, Check, Loader2, CloudCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -113,7 +114,7 @@ export function TopNav({
         {/* Editable form title */}
         {isEditingTitle && !readOnly ? (
           <div className="flex items-center gap-1.5">
-            <Input
+            <input
               autoFocus
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
@@ -125,11 +126,12 @@ export function TopNav({
                   setIsEditingTitle(false);
                 }
               }}
-              className="h-7 w-44 sm:w-52 text-sm border-primary/50 bg-card px-2 focus-visible:ring-1 focus-visible:ring-primary text-slate-100 font-medium"
+              placeholder="Untitled Form"
+              className="h-7 min-w-[120px] max-w-[240px] px-1 py-0 text-sm font-semibold text-[hsl(var(--foreground))] bg-transparent border-none outline-none focus:outline-none focus:ring-0 font-doodle"
             />
             <button
               onClick={handleTitleCommit}
-              className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground cursor-pointer"
+              className="flex h-6 w-6 items-center justify-center rounded-sm text-slate-500 hover:text-[hsl(var(--foreground))] cursor-pointer"
             >
               <Check className="h-3.5 w-3.5" />
             </button>
@@ -185,14 +187,14 @@ export function TopNav({
       </div>
 
       {/* ── Right: Actions ──────────────────────────────────────── */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={handlePreview}
-          className="h-7.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-lg border border-border/30 hover:bg-slate-900"
+          className="h-8 px-3.5 text-xs font-bold gap-1.5 font-mono"
         >
-          <Eye className="h-3.5 w-3.5" />
+          <Eye className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
           Preview
         </Button>
 
@@ -201,7 +203,7 @@ export function TopNav({
             size="sm"
             onClick={handlePublish}
             disabled={publishing}
-            className="h-7.5 gap-1.5 text-xs font-semibold bg-primary hover:bg-primary/95 text-white cursor-pointer rounded-lg px-3.5 shadow-md"
+            className="h-8 px-3.5 text-xs font-bold gap-1.5 font-mono"
           >
             {publishing ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -211,9 +213,14 @@ export function TopNav({
             Publish
           </Button>
         ) : (
-          <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-md tracking-wider">
+          <Button
+            size="sm"
+            disabled
+            className="h-8 px-3.5 text-xs font-bold gap-1.5 font-mono bg-[hsl(var(--blueprint-wash))] text-[hsl(var(--primary))] border-2 border-[hsl(var(--foreground))] doodle-border-sm translate-x-[2px] translate-y-[2px] shadow-none opacity-90 cursor-default"
+          >
+            <Globe className="h-3.5 w-3.5" />
             Published
-          </span>
+          </Button>
         )}
       </div>
     </header>
